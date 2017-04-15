@@ -1,1 +1,0 @@
-With files, BGI_util.h, koolplot.h, libkooplot.a, PlotData.h, Plotstream.h, winbgitypes.h,    the only thing needed is #include "koolplot.h"
