@@ -1,1 +1,3 @@
-Lets use gnuplot, I'll see if I can implement it, but if anything we run our code to a text file and then I can make a python program to produce the graphs based on the code.
+Need to fix 
+
+The filetograph code is not getting the data read for whatever reason.
