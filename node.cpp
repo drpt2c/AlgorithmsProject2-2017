@@ -4,10 +4,8 @@ using namespace std;
 
 Node::Node()
 {
-    ID = -1;
-}
-
-Node::Node(int val)
-{
-    ID = val;
+    vertex = -1;
+    visited = false;
+    linksPtr = links;
+    linksAmount = 0;
 }
