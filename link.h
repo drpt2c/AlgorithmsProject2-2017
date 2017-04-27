@@ -12,14 +12,22 @@ class Link
         int getTarget() { return target; }
         void setTarget(int val) { target = val; }
         int getCapacity() { return capacity; }
+        int getFlow() {return flow; }
+        void setFlow(int val) { flow = val; }
         void setCapacity(int val) { capacity = val; }
         bool getAlive() { return alive; } 
+        bool getBreak() {return breakable; }
         void setAlive(bool val) { alive = val; } 
+        bool getVisit() { return resVisit; }
+        void setVisit(bool val) { resVisit = val; }
     private:
         int source;
         int target;
-        int capacity;
+        int capacity;   //total avaliable flow
+        int flow;       //the current amount of the capacity used
         bool alive;
+        bool breakable; //if this is included in K, then it cannot be broken every
+        bool resVisit;  //this is for the purpose of the residual graph
 };
 
 #endif
