@@ -8,4 +8,6 @@ Node::Node()
     visited = false;
     linksPtr = links;
     linksAmount = 0;
+    distance = 0;
+    parent = -1;
 }

@@ -22,12 +22,19 @@ class Node
         int getLinksAmount() { return linksAmount; }
         bool getVisited() { return visited; }
         void setVisited(bool val) { visited = val; }
+        int getDistance() { return distance; }
+        void setDistance(int val) { distance = val; }
+        void incrementDistance() { distance++; }
+        int getParent() { return parent; }
+        void setParent(int val) { parent = val; }
     private:
         int vertex;
-        Link links[20];
+        Link links[100];
         Link *linksPtr;
         int linksAmount;
         bool visited;
+        int distance;
+        int parent;
     
 };
 

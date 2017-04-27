@@ -3,6 +3,7 @@
 #include <string>
 #include <cstring>
 #include <stdlib.h>
+#include <list>
 #include "node.h"
 #include "link.h"
 
@@ -12,7 +13,7 @@ void loadFile(Node *nodesPtr, int& nodeAmount);
 
 void setDestinationNodes(Node& S, Node& D, Node *nodesPtr, const int nodeAmount);
 
-int measureShortestDistance(int distance, int sID, int dID);
+int measureShortestDistance(Node& S, Node& D, Node *nodesPtr, const int nodeAmount);
 
 int main()
 {
@@ -30,7 +31,7 @@ int main()
     
     loadFile(nodesPtr, nodeAmount);
     
-    //setDestinationNodes(S, D, nodesPtr, nodeAmount);
+    setDestinationNodes(S, D, nodesPtr, nodeAmount);
     
     return 0;
 }
@@ -128,55 +129,86 @@ void setDestinationNodes(Node& S, Node& D, Node *nodesPtr, const int nodeAmount)
         randomNumb = rand() % nodeAmount;
         D.setVertex( (nodesPtr + randomNumb)->getVertex() );
         
+        cout << "Starting Node Attempt: " << S.getVertex() << endl;
+        cout << "Ending Node Attempt: " << D.getVertex() << endl;
+
         //measure distance to make sure they are far enough apart
-        //d = measureShortestDistance(0, S.getVertex(), D.getVertex());
-        if(d >= 10)
+        d = measureShortestDistance(S, D, nodesPtr, nodeAmount);
+        if(d >= 8)
         {
             farApart = true;
+            cout << "Successful S and D assignment: " << endl;
+        }
+        else
+        {
+            cout << "random S and D, failed, trying again." << endl;
         }
             
     }
 }
-/*
-int measureShortestDistance(int distance, int sID, int dID)
+
+int measureShortestDistance(Node& S, Node& D, Node *nodesPtr, const int nodeAmount)
 {
-    int amountT = 0; //amount of links from S
-    int targets[30]; //all targets from source node
-    int distances[50]; //all potential
-    //search all links for ones with source = S and get their target IDs
-    for(int i = 0; i < linkAmount; i++)
+    Link *linksPtr;
+    int linkAmount;
+    int targetVertex;
+    int s;
+    bool found = false; //used to find ending node
+    
+    //set all nodes to default
+    for(int i = 0; i < nodeAmount; i++)
     {
-        if(sID == (linksPtr + i)->getSource())
+        (nodesPtr + i)->setVisited(false);
+        (nodesPtr + i)->setDistance(0);
+    }
+    
+    list<int> queue;
+ 
+    // Mark the current node as visited and enqueue it
+    S.setVisited(true);
+    queue.push_back(S.getVertex());
+ 
+    // 'i' will be used to get all adjacent vertices of a vertex
+    
+ 
+    while(!queue.empty() && !found)
+    {
+        // Dequeue a vertex from queue and print it
+        s = queue.front();
+        linksPtr = (nodesPtr + s)->getLinks();
+        linkAmount = (nodesPtr + s)->getLinksAmount();
+        
+        cout << s << endl;
+        queue.pop_front();
+ 
+        // Get all adjacent vertices of the dequeued vertex s
+        // If a adjacent has not been visited, then mark it visited
+        // and enqueue it
+        for(int i = 0; i < linkAmount; i++)
         {
-            target[amountT] = (linksPtr + i)->getTarget();
-            amountT++;
-        } 
-    }
-    if(amountT > 0)
-    {
-        distance++;
-    }
-    //check to see if any of the targets are the end node
-    for(int i = 0; i < amountT; i++)
-    {
-        if(targets[i] == dID)
-            return distance;
-    }
-    //find all links, find if one of them has any of target links
-    for(int h = 0; h < linkAmount; h++)  
-    {
-        for(int i = 0; i < amountT; i++)
-        {
-            if((linksPtr + h)->getTarget() == targets[i])
+            targetVertex = (linksPtr + i)->getTarget();
+            if((nodesPtr + targetVertex)->getVisited() == false)
             {
-                measureShortestDistance(distance, (linksPtr + h)->getID(), dID, linksPtr, linkAmount);
-                        
+                (nodesPtr + targetVertex)->setVisited(true);
+                (nodesPtr + targetVertex)->setParent(s);
+                (nodesPtr + targetVertex)->setDistance((nodesPtr + s)->getDistance());
+                (nodesPtr + targetVertex)->incrementDistance();
+                cout << "Incremented Distance: " << (nodesPtr + targetVertex)->getDistance() << endl;
+                queue.push_back(targetVertex);
+            }
+            if((nodesPtr + targetVertex)->getVertex() == D.getVertex())
+            {
+                found = true;
+                D.setDistance((nodesPtr + targetVertex)->getDistance());
             }
         }
     }
-    return 0;
+    if(queue.empty())
+        cout << "QUEUE EMPTY" << endl;
+    if(found)
+        cout << "FOUND - Node D Distance: " << D.getDistance() << endl;
+    return D.getDistance();
 }
-*/
 
 
 
