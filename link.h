@@ -18,8 +18,6 @@ class Link
         bool getAlive() { return alive; } 
         bool getBreak() {return breakable; }
         void setAlive(bool val) { alive = val; } 
-        bool getVisit() { return resVisit; }
-        void setVisit(bool val) { resVisit = val; }
     private:
         int source;
         int target;
@@ -27,7 +25,7 @@ class Link
         int flow;       //the current amount of the capacity used
         bool alive;
         bool breakable; //if this is included in K, then it cannot be broken every
-        bool resVisit;  //this is for the purpose of the residual graph
+        
 };
 
 #endif

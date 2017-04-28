@@ -21,7 +21,7 @@ bool bfs(Node& S, Node& D, Node *nodesPtr, const int nodeAmount);
 
 int MaxFlow(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int totalLink);
 
-int Residual(Node& G, Node&D, Node *nodesPtr, int lgFlow);
+int Residual(int target, Node&D, Node *nodesPtr, int lgFlow);
 
 int FlowOfEnd(Node& D, Node *nodesPtr);
 
@@ -29,7 +29,7 @@ int main()
 {
     srand(time(NULL));
     //arrays of nodes/links and their pointers
-    Node allNodes[1000];
+    Node *allNodes = new Node[1000];
     Node *nodesPtr;
 
     Node S; //starting node
@@ -39,17 +39,20 @@ int main()
     int totalLink = 0; //used to clear flow of the links
     
     nodesPtr = allNodes;
+
+    cout << "we made it this far." << endl;
     
     loadFile(nodesPtr, nodeAmount, totalLink);
     
     setDestinationNodes(S, D, nodesPtr, nodeAmount);
     
+    delete[] allNodes;
     return 0;
 }
 
 void loadFile(Node *nodesPtr, int& nodeAmount, int& totalLink)
 {
-    ifstream fin;
+    ifstream fin ( "Kdl.gml.txt");
     string line; //used for getting lines from file
     int holderSource; //used to hold id values while getting file input
     int holderTarget;
@@ -294,11 +297,10 @@ int MaxFlow(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int to
     int avFlow;//for the lgFlow
     bool alive = false;
 
-    //clear the flow to recalculate it
+    //clear the flow to recalculate it & the nodes that have been visited
     for (int i = 0; i < totalLink; i++)
     {
         (linksPtr + i)->setFlow(0);
-        (linksPtr + i)->setVisit(false);
     }
     for (int i = 0; i < nodeAmount; i++)
     {
@@ -320,7 +322,7 @@ int MaxFlow(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int to
 
         if (alive == true/*the links are alive*/)
         {
-            flow = Residual((S.getVertex() + targetVertex), D, nodesPtr, avFlow); //I DON'T THINK I PASSED THE NEXT NODE RIGHT
+            flow = Residual(targetVertex, D, nodesPtr, avFlow); //I DON'T THINK I PASSED THE NEXT NODE RIGHT
             totalFlow = totalFlow + flow;
         }
         i++;
@@ -331,7 +333,7 @@ int MaxFlow(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int to
     return totalFlow;
 }
 
-int Residual(Node& G, Node&D, Node *nodesPtr, int lgFlow)  
+int Residual(int target, Node&D, Node *nodesPtr, int lgFlow)  //target is the current node
 {
     //useful info
     Link *linksPtr;
@@ -344,14 +346,14 @@ int Residual(Node& G, Node&D, Node *nodesPtr, int lgFlow)
     int avFlow;//for the lgFlow
     bool alive = false;
 
-    if (G.getVertex() == D.getVertex()) //if reached the ending node
+    if (target == D.getVertex()) //if reached the ending node
     {
         return lgFlow;
     }
 
     //get the necessary info from the current node
-    linksPtr = (nodesPtr + G.getVertex())->getLinks();
-    linkAmount = (nodesPtr + G.getVertex())->getLinksAmount();
+    linksPtr = (nodesPtr + target)->getLinks();
+    linkAmount = (nodesPtr + target)->getLinksAmount();
     curVertex = (nodesPtr)->getVertex();
 
     //sort the links by most avaiable flow !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -361,21 +363,22 @@ int Residual(Node& G, Node&D, Node *nodesPtr, int lgFlow)
     while (i < linkAmount) //while there are still links from G to visit
     {
         alive = (linksPtr + i)->getAlive();
-        if (alive == true/*the link is alive*/)
+        if (alive == true && (nodesPtr + target)->getVisited() != true) /*the link is alive and not visited*/
         {
             targetVertex = (linksPtr + i)->getTarget();
             capacity = (linksPtr + i)->getCapacity();
-            avFlow = capacity - (linksPtr + i)->getFlow();
+            avFlow = capacity - (linksPtr + i)->getFlow();//avaiable flow 
             if (avFlow > lgFlow) //the avaliabe capacity of the link is greater than the lowest avaliable capacity
             {
-                flow = Residual((G.getVertex() + targetVertex), D, nodesPtr, lgFlow);//recursively calls the data    I DON'T THINK THE NEXT G IS BEING PASSED RIGHT
+                flow = Residual(targetVertex, D, nodesPtr, lgFlow);//recursively calls the data
             }
             else {
-                flow = Residual((G.getVertex() + targetVertex), D, nodesPtr, avFlow);//recursively calls the data    I DON'T THINK THE NEXT G IS BEING PASSED RIGHT
+                flow = Residual(targetVertex, D, nodesPtr, avFlow);//recursively calls the data
             }
             if (flow == 0) {} //not a valid path, try again
             else {//the new lowest capacity flow of a link
                 (linksPtr + i)->setFlow(flow);
+                (nodesPtr + target)->setVisited(true);
                 return flow;
             }
         }
