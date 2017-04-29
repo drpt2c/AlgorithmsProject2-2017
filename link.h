@@ -17,6 +17,7 @@ class Link
         void setCapacity(int val) { capacity = val; }
         bool getAlive() { return alive; } 
         bool getBreak() {return breakable; }
+        void setBreak(bool val) { breakable = val; }
         void setAlive(bool val) { alive = val; } 
     private:
         int source;

@@ -25,8 +25,11 @@ int Residual(int target, Node&D, Node *nodesPtr, int lgFlow);
 
 int FlowOfEnd(Node& D, Node *nodesPtr);
 
+void ResetAll(Node *nodesPtr, const int nodeAmount, const int totalLink);
+
 int main()
 {
+    int initialMaxFlow = 0;//this is the starting maxflow
     srand(time(NULL));
     //arrays of nodes/links and their pointers
     Node *allNodes = new Node[1000];
@@ -39,12 +42,14 @@ int main()
     int totalLink = 0; //used to clear flow of the links
     
     nodesPtr = allNodes;
-
-    cout << "we made it this far." << endl;
     
     loadFile(nodesPtr, nodeAmount, totalLink);
     
     setDestinationNodes(S, D, nodesPtr, nodeAmount);
+
+    initialMaxFlow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
+
+
     
     delete[] allNodes;
     return 0;
@@ -310,7 +315,7 @@ int MaxFlow(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int to
     //base case stuff from S
     linksPtr = (nodesPtr + S.getVertex())->getLinks();
     linkAmount = (nodesPtr + S.getVertex())->getLinksAmount();
-    //need a way to sort the links by avaiable flow
+    //need a way to sort the links by avaiable flow !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     //main part, maxflow is the basecase, this will call residual recursively.
     while (i < linkAmount/*there are links to choose*/)
@@ -388,7 +393,7 @@ int Residual(int target, Node&D, Node *nodesPtr, int lgFlow)  //target is the cu
     return 0;
 }
 
-int FlowOfEnd(Node& D, Node *nodesPtr)
+int FlowOfEnd(Node& D, Node *nodesPtr) //I don't think this works nor is it necessary.
 {
     //gets the amount and links of D(end node)
     int endlinks = (nodesPtr + D.getVertex())->getLinksAmount();
@@ -402,4 +407,25 @@ int FlowOfEnd(Node& D, Node *nodesPtr)
     }
 
     return totalFlow;
+}
+
+//this will make all the settings for Nodes and Links their default settings. aka, master reset.
+void ResetAll(Node *nodesPtr, const int nodeAmount, const int totalLink)
+{
+    Link *linkPtr;
+    for (int i = 0; i < nodeAmount; i++)
+    {
+        (nodesPtr + i)->setVisited(false);
+        (nodesPtr + i)->setDistance(0);
+    }
+    for (int i = 0; i < totalLink; i++)
+    {
+        (linkPtr + i)->setFlow(0);
+        (linkPtr + i)->setAlive(true);
+        (linkPtr + i)->setBreak(true);
+    }
+
+
+
+
 }
