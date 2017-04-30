@@ -14,10 +14,6 @@ using namespace std;
 //this loads the file into our data
 void loadFile(Node *nodesPtr, int& nodeAmount, int& totalLink);
 
-void setDestinationNodes(Node& S, Node& D, Node *nodesPtr, const int nodeAmount);
-
-int measureShortestDistance(Node& S, Node& D, Node *nodesPtr, const int nodeAmount);
-
 //This is Breadth First Search and calculates the depth from the Source S
 void bfs(Node& S, Node *nodesPtr, const int nodeAmount);
 
@@ -36,8 +32,10 @@ void ResetAll(Node *nodesPtr, const int nodeAmount, const int totalLink);
 //this will assign D after S is randomly placed
 void SetDist(Node& S, Node& D, Node *nodesPtr, const int nodeAmount);
 
+void addKLinks(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int numberK);
+
 //this will set all nodes that are not connected
-//void SetNodes(Node *nodesPtr, const int nodeAmount, const int totalLink);
+void SetNodes(Node *nodesPtr, const int nodeAmount, const int totalLink);
 
 //START OF OUR ATTACKS
 
@@ -70,10 +68,15 @@ int main()
     loadFile(nodesPtr, nodeAmount, totalLink);
 
     //Set all nodes with no edges to random links
-    //SetNodes(nodesPtr, nodeAmount, totalLink);
+    SetNodes(nodesPtr, nodeAmount, totalLink);
+
+    
     
     SetDist(S, D, nodesPtr, nodeAmount);
     //setDestinationNodes(S, D, nodesPtr, nodeAmount);
+
+    addKLinks(S, D, nodesPtr, nodeAmount, 50);
+    
 
     initialMaxFlow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
     cout << "Initial Max Flow is " << initialMaxFlow << "." << endl;
@@ -218,6 +221,35 @@ void loadFile(Node *nodesPtr, int& nodeAmount, int& totalLink)
     return;
 }
 
+void SetNodes(Node *nodesPtr, const int nodeAmount, const int totalLink)
+{
+    Link link;
+    int randomNumb;
+    for (int i = 0; i < nodeAmount; i++)
+    {
+        if ((nodesPtr + i)->getLinksAmount() == 0)
+        {
+            link.setSource( (nodesPtr + i)->getVertex() );
+            link.setBreak(false);
+
+            //connect node to x many links
+            for (int k = 0; k < 20; k++)
+            {
+                randomNumb = rand() % nodeAmount;
+
+                //make sure the link is not connected to D
+                if ((nodesPtr + randomNumb)->getVertex() != (nodesPtr + i)->getVertex() )
+                {
+                    link.setTarget((nodesPtr + randomNumb)->getVertex());
+                    (nodesPtr + i)->addLink(link);
+                    cout << "ADDED LINK: " << (nodesPtr+i)->getVertex() << " WITH TARGET: " << (nodesPtr + randomNumb)->getVertex() << endl;
+                }
+                else
+                    k--;
+            }
+        }
+    }
+}
 
 
 void bfs(Node& S, Node *nodesPtr, const int nodeAmount) {
@@ -461,7 +493,7 @@ int Residual(int target, Node&D, Node *nodesPtr, int lgFlow)  //target is the cu
 
     }
     //delete[] sorted;
-    return flow;
+    return 0;
 }
 
 int FlowOfEnd(Node& D, Node *nodesPtr) //I don't think this works nor is it necessary.
@@ -484,16 +516,20 @@ int FlowOfEnd(Node& D, Node *nodesPtr) //I don't think this works nor is it nece
 void ResetAll(Node *nodesPtr, const int nodeAmount, const int totalLink)
 {
     Link *linkPtr;
+    int linkAmount;
+;
     for (int i = 0; i < nodeAmount; i++) //this resets the depth and the visted for all nodes
     {
         (nodesPtr + i)->setVisited(false);
         (nodesPtr + i)->setDistance(0);
-    }
-    for (int i = 0; i < totalLink; i++) //this resets all the link values that have been altered
-    {
-        (linkPtr + i)->setFlow(0);
-        (linkPtr + i)->setAlive(true);
-        (linkPtr + i)->setBreak(true);
+        linkPtr = (nodesPtr + i)->getLinks();
+        linkAmount = (nodesPtr + i)->getLinksAmount();
+        for (int k = 0; k < totalLink; k++) //this resets all the link values that have been altered
+        {
+            (linkPtr + k)->setFlow(0);
+            (linkPtr + k)->setAlive(true);
+            (linkPtr + k)->setBreak(true);
+        }
     }
 }
 
@@ -525,7 +561,51 @@ void SetDist(Node& S, Node& D, Node *nodesPtr, const int nodeAmount) {
     
 }
 
+void addKLinks(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int numberK)
+{
+    int randomNumb;
+    Link Klink;
 
+    Klink.setSource(S.getVertex());
+    Klink.setBreak(false);
+
+    //make klinks for S
+    for (int i = 0; i < numberK; i++)
+    {
+        randomNumb = rand() % nodeAmount;
+
+        //make sure the link is not connected to D
+        if ((nodesPtr + randomNumb)->getVertex() != D.getVertex())
+        {
+            Klink.setTarget((nodesPtr + randomNumb)->getVertex());
+            S.addLink(Klink);
+            cout << "ADDED LINK FROM S WITH TARGET: " << (nodesPtr + randomNumb)->getVertex() << endl;
+        }
+        else
+            i--;
+    }
+
+    Klink.setSource(D.getVertex());
+    Klink.setBreak(false);
+
+    //make klinks for D
+    for (int i = 0; i < numberK; i++)
+    {
+        randomNumb = rand() % nodeAmount;
+
+        //make sure the link is not connected to S
+        if ((nodesPtr + randomNumb)->getVertex() != S.getVertex())
+        {
+            Klink.setTarget((nodesPtr + randomNumb)->getVertex());
+            D.addLink(Klink);
+            cout << "ADDED LINK FROM D WITH TARGET: " << (nodesPtr + randomNumb)->getVertex() << endl;
+
+        }
+        else
+            i--;
+    }
+
+}
 
 
 

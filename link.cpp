@@ -8,6 +8,8 @@ Link::Link()
     target = -1;
     alive = false;
     capacity = -1;
+    flow = 0;
+    breakable = true;
 }
 
 Link::Link(int s, int t, int c, bool a)
@@ -16,4 +18,6 @@ Link::Link(int s, int t, int c, bool a)
     target = t;
     capacity = c;
     alive = a;
+    flow = 0;
+    breakable = true;
 }

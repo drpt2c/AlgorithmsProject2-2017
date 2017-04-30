@@ -18,6 +18,11 @@ class Node
         {
             links[linksAmount] = l;
             linksAmount++;
+            
+        }
+        void decrementLinks()
+        {
+            linksAmount--;
         }
         int getLinksAmount() { return linksAmount; }
         bool getVisited() { return visited; }
