@@ -25,7 +25,11 @@ int Residual(int target, Node&D, Node *nodesPtr, int lgFlow);
 
 int FlowOfEnd(Node& D, Node *nodesPtr);
 
-void ResetAll(Node *nodesPtr, const int nodeAmount, const int totalLink);
+void ResetAll(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int totalLink);
+
+void addKLinks(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int numberK);
+
+void ResetKLinks(Node& S, Node& D);
 
 int main()
 {
@@ -47,6 +51,8 @@ int main()
     
     setDestinationNodes(S, D, nodesPtr, nodeAmount);
 
+    addKLinks(S, D, nodesPtr, nodeAmount, 10);
+
     initialMaxFlow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
 
 
@@ -57,7 +63,7 @@ int main()
 
 void loadFile(Node *nodesPtr, int& nodeAmount, int& totalLink)
 {
-    ifstream fin ( "Kdl.gml.txt");
+    ifstream fin;
     string line; //used for getting lines from file
     int holderSource; //used to hold id values while getting file input
     int holderTarget;
@@ -251,7 +257,7 @@ bool bfs(Node& S, Node& D, Node *nodesPtr, const int nodeAmount) {
     q.push_back(S.getVertex());
 
     //set S to visited
-    
+    S.setVisited(true);
     
     while (!q.empty())
     {
@@ -297,7 +303,6 @@ int MaxFlow(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int to
     int targetVertex;
     int totalFlow = 0;
     int flow = 0;
-    int i = 0;
     int capacity;//for links capcity
     int avFlow;//for the lgFlow
     bool alive = false;
@@ -318,6 +323,7 @@ int MaxFlow(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int to
     //need a way to sort the links by avaiable flow !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     //main part, maxflow is the basecase, this will call residual recursively.
+    int i = 0;
     while (i < linkAmount/*there are links to choose*/)
     {
         targetVertex = (linksPtr + i)->getTarget();
@@ -410,22 +416,104 @@ int FlowOfEnd(Node& D, Node *nodesPtr) //I don't think this works nor is it nece
 }
 
 //this will make all the settings for Nodes and Links their default settings. aka, master reset.
-void ResetAll(Node *nodesPtr, const int nodeAmount, const int totalLink)
+void ResetAll(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int totalLink)
 {
     Link *linkPtr;
+    int linkAmount
+    
     for (int i = 0; i < nodeAmount; i++)
     {
         (nodesPtr + i)->setVisited(false);
         (nodesPtr + i)->setDistance(0);
+        linkPtr = (nodesPtr + i)->getLinks();
+        linkAmount = (nodesPtr + i)->getLinksAmount();
+        
+        for (int i = 0; i < linkAmount; i++)
+        {
+            (linkPtr + i)->setFlow(0);
+            (linkPtr + i)->setAlive(true);
+            (linkPtr + i)->setBreak(true);
+        }
+
     }
-    for (int i = 0; i < totalLink; i++)
+}
+
+void ResetKLinks(Node& S, Node& D)
+{
+    Link *linkPtr;
+    int linkAmount;
+
+    //reset K links
+    linkPtr = S.getLinks();
+    linkAmount = S.getLinksAmount();
+    for (int i = 0; i < linkAmount; i++)
     {
-        (linkPtr + i)->setFlow(0);
-        (linkPtr + i)->setAlive(true);
-        (linkPtr + i)->setBreak(true);
+        if((linkPtr + i)->getBreak() == false)
+        {
+            (linkPtr + i)->setTarget(-1);
+            (linkPtr + i)->setBreak(true);
+            S.decrementLinks();
+        }
     }
+    linkPtr = D.getLinks();
+    linkAmount = D.getLinksAmount();
+    for (int i = 0; i < linkAmount; i++)
+    {
+        if((linkPtr + i)->getBreak() == false)
+        {
+            (linkPtr + i)->setTarget(-1);
+            (linkPtr + i)->setBreak(true);
+            D.decrementLinks();
+        }
+    }
+}
 
+void addKLinks(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int numberK)
+{
+    int randomNumb;
+    Link Klink;
+    
+    Klink.setSource(S.getVertex());
+    Klink.setBreak(false);
+    
+    //make klinks for S
+    for(int i = 0; i < numberK; i++)
+    {
+        randomNumb = rand() % nodeAmount;
+        
+        //make sure the link is not connected to D
+        if((nodesPtr + randomNumb)->getVertex() != D.getVertex())
+        {
+            Klink.setTarget((nodesPtr + randomNumb)->getVertex());
+            S.addLink(Klink);
+            cout << "ADDED LINK FROM S WITH TARGET: " << (nodesPtr + randomNumb)->getVertex() << endl;
+        }
+        else
+            i--;
+    }
+    
+    Klink.setSource(D.getVertex());
 
+    //make klinks for D
+    for(int i = 0; i < numberK; i++)
+    {
+        randomNumb = rand() % nodeAmount;
+        
+        //make sure the link is not connected to S
+        if((nodesPtr + randomNumb)->getVertex() != S.getVertex())
+        {
+            Klink.setTarget((nodesPtr + randomNumb)->getVertex());
+            D.addLink(Klink);
+            cout << "ADDED LINK FROM D WITH TARGET: " << (nodesPtr + randomNumb)->getVertex() << endl;
 
+        }
+        else
+            i--;
+    }
 
 }
+
+
+
+
+
