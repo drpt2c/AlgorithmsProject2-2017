@@ -11,23 +11,43 @@
 
 using namespace std;
 
+//this loads the file into our data
 void loadFile(Node *nodesPtr, int& nodeAmount, int& totalLink);
 
 void setDestinationNodes(Node& S, Node& D, Node *nodesPtr, const int nodeAmount);
 
 int measureShortestDistance(Node& S, Node& D, Node *nodesPtr, const int nodeAmount);
 
+//This is Breadth First Search and calculates the depth from the Source S
 void bfs(Node& S, Node *nodesPtr, const int nodeAmount);
 
+//this calculates the max flow of the algorithm
 int MaxFlow(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int totalLink);
 
+//This is a resusive function to get the max flow
 int Residual(int target, Node&D, Node *nodesPtr, int lgFlow);
 
+//checks the flow at D, which should accurately tell what the current flow is
 int FlowOfEnd(Node& D, Node *nodesPtr);
 
+//this clears all flow and visited nodes
 void ResetAll(Node *nodesPtr, const int nodeAmount, const int totalLink);
 
+//this will assign D after S is randomly placed
 void SetDist(Node& S, Node& D, Node *nodesPtr, const int nodeAmount);
+
+//this will set all nodes that are not connected
+//void SetNodes(Node *nodesPtr, const int nodeAmount, const int totalLink);
+
+//START OF OUR ATTACKS
+
+//static attack method
+void Static_Attack(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int totalLink);
+
+void Reactive_Attack(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int totalLink);
+
+void Random_Attack(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int totalLink);
+
 
 int main()
 {
@@ -48,6 +68,9 @@ int main()
     nodesPtr = allNodes;
     
     loadFile(nodesPtr, nodeAmount, totalLink);
+
+    //Set all nodes with no edges to random links
+    //SetNodes(nodesPtr, nodeAmount, totalLink);
     
     SetDist(S, D, nodesPtr, nodeAmount);
     //setDestinationNodes(S, D, nodesPtr, nodeAmount);
@@ -55,7 +78,54 @@ int main()
     initialMaxFlow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
     cout << "Initial Max Flow is " << initialMaxFlow << "." << endl;
 
+    cout << "Total Number of Nodes: " << nodeAmount << endl;
+    cout << "Total Number of Edges: " << totalLink << endl;
+
+    int total = 0;
+    for (int i = 0; i < nodeAmount; i++)
+    {
+        if ((nodesPtr + i)->getLinksAmount() == 0)
+        {
+            total++;
+        }
+    }
+    cout << "Total number of Nodes with no links is: " << total << endl;
+
     cin >> done;
+
+    //start of Our Attack Algorithms
+    //static attack
+    /*
+    int i = 0;
+    int flow = initialMaxFlow;
+    while (flow != 0) {
+        Static_Attack(S, D, nodesPtr, nodeAmount, totalLink);
+    }
+    */
+
+    ResetAll(nodesPtr, nodeAmount, totalLink);
+
+    //Reactive Attack
+    int i = 0;
+    int flow = initialMaxFlow;
+    while (flow != 0)
+    {
+        Reactive_Attack(S, D, nodesPtr, nodeAmount, totalLink);
+        flow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
+        i++;
+    }
+
+    /*
+    ResetAll(nodesPtr, nodeAmount, totalLink);
+    //Random Attack
+    int i = 0;
+    int flow = initialMaxFlow;
+    while (flow != 0)
+    {
+        Random_Attack(S, D, nodesPtr, nodeAmount, totalLink);
+
+    }
+    */
 
 
     
@@ -113,8 +183,12 @@ void loadFile(Node *nodesPtr, int& nodeAmount, int& totalLink)
             
             //(linksPtr + linkAmount)->setTarget(holderSource); //set target
             //(linksPtr + linkAmount)->setCapacity(rand() % 20 + 1); //set capacity
+            int capacity = 0;
+            while (capacity == 0) {
+                capacity = (rand() % 20) + 1;
+            }
 
-            Link newLink(holderSource, holderTarget, rand() % 20 + 1, true);
+            Link newLink(holderSource, holderTarget, capacity /*rand() % 20 + 1*/, true);
             for(int i = 0; i < nodeAmount; i++)
             {
                 if((nodesPtr + i)->getVertex() == holderSource)
@@ -144,100 +218,6 @@ void loadFile(Node *nodesPtr, int& nodeAmount, int& totalLink)
     return;
 }
 
-void setDestinationNodes(Node& S, Node& D, Node *nodesPtr, const int nodeAmount)
-{
-    bool farApart = false;
-    int randomNumb;
-    int d;
-    
-    while(!farApart)
-    {
-        //set random S and D nodes
-        randomNumb = rand() % nodeAmount;
-        S.setVertex( (nodesPtr + randomNumb)->getVertex() );
-        randomNumb = rand() % nodeAmount;
-        D.setVertex( (nodesPtr + randomNumb)->getVertex() );
-        
-        cout << "Starting Node Attempt: " << S.getVertex() << endl;
-        cout << "Ending Node Attempt: " << D.getVertex() << endl;
-
-        //measure distance to make sure they are far enough apart
-        d = measureShortestDistance(S, D, nodesPtr, nodeAmount);
-        if(d >= 8)
-        {
-            farApart = true;
-            cout << "Successful S and D assignment: " << endl;
-        }
-        else
-        {
-            cout << "random S and D, failed, trying again." << endl;
-        }
-            
-    }
-}
-
-int measureShortestDistance(Node& S, Node& D, Node *nodesPtr, const int nodeAmount)
-{
-    Link *linksPtr;
-    int linkAmount;
-    int targetVertex;
-    int s;
-    bool found = false; //used to find ending node
-    
-    //set all nodes to default
-    for(int i = 0; i < nodeAmount; i++)
-    {
-        (nodesPtr + i)->setVisited(false);
-        (nodesPtr + i)->setDistance(0);
-    }
-    
-    list<int> queue;
- 
-    // Mark the current node as visited and enqueue it
-    S.setVisited(true);
-    queue.push_back(S.getVertex());
- 
-    // 'i' will be used to get all adjacent vertices of a vertex
-    
- 
-    while(!queue.empty() && !found)
-    {
-        // Dequeue a vertex from queue and print it
-        s = queue.front();
-        linksPtr = (nodesPtr + s)->getLinks();
-        linkAmount = (nodesPtr + s)->getLinksAmount();
-        
-        cout << s << endl;
-        queue.pop_front();
- 
-        // Get all adjacent vertices of the dequeued vertex s
-        // If a adjacent has not been visited, then mark it visited
-        // and enqueue it
-        for(int i = 0; i < linkAmount; i++)
-        {
-            targetVertex = (linksPtr + i)->getTarget();
-            if((nodesPtr + targetVertex)->getVisited() == false)
-            {
-                (nodesPtr + targetVertex)->setVisited(true);
-                (nodesPtr + targetVertex)->setParent(s);
-                (nodesPtr + targetVertex)->setDistance((nodesPtr + s)->getDistance());
-                (nodesPtr + targetVertex)->incrementDistance();
-                cout << "Incremented Distance: " << (nodesPtr + targetVertex)->getDistance() << endl;
-                queue.push_back(targetVertex);
-            }
-            if((nodesPtr + targetVertex)->getVertex() == D.getVertex())
-            {
-                found = true;
-                D.setDistance((nodesPtr + targetVertex)->getDistance());
-            }
-        }
-    }
-    if(queue.empty())
-        cout << "QUEUE EMPTY" << endl;
-    if(found)
-        cout << "FOUND - Node D Distance: " << D.getDistance() << endl;
-    return D.getDistance();
-}
 
 
 void bfs(Node& S, Node *nodesPtr, const int nodeAmount) {
@@ -271,7 +251,7 @@ void bfs(Node& S, Node *nodesPtr, const int nodeAmount) {
         linksPtr = (nodesPtr + s)->getLinks();
         linkAmount = (nodesPtr + s)->getLinksAmount();
 
-        cout << s << endl;
+        //cout << s << endl;
         queue.pop_front();
 
         // Get all adjacent vertices of the dequeued vertex s
@@ -331,14 +311,53 @@ int MaxFlow(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int to
     linksPtr = (nodesPtr + S.getVertex())->getLinks();
     linkAmount = (nodesPtr + S.getVertex())->getLinksAmount();
     //need a way to sort the links by avaiable flow !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //sort the links by most avaiable flow 
+    /*
+    int *hold = new int[linkAmount];
+    int *sorted = new int[linkAmount];
 
-    //main part, maxflow is the basecase, this will call residual recursively.
-    while (i < linkAmount/*there are links to choose*/)
+    int maxLinkNum = linkAmount;
+    int maxFlow = 0;
+    for (int i = 0; i < maxLinkNum; i++) //this should partially sort the list
     {
         targetVertex = (linksPtr + i)->getTarget();
         capacity = (linksPtr + i)->getCapacity();
+        avFlow = capacity - (linksPtr + i)->getFlow();//avaiable flow
+        hold[i] = avFlow; //this is to place each flow in a array
+        sorted[i] = i;
+    }
+    int temphold;//temp for hold
+    int temp; //temp for sorted
+    for (int i = 1; i < linkAmount; i++) //this is insertion sort to sort link saturation
+    {
+        for (int j = i; j >= 1; j--)
+        {
+            if (hold[j] > hold[j - 1])// if emement further in the array is greater
+            {
+                temphold = hold[j];//hold
+                temp = sorted[j];//sorted
+                hold[j] = hold[j - 1];//hold
+                sorted[j] = sorted[j - 1];//sorted
+                hold[j - 1] = temphold;//hold
+                sorted[j - 1] = temp;//sorted
+            }
+        }
+    }
+    delete[] hold;
+
+    int s;*/
+    //main part, maxflow is the basecase, this will call residual recursively.
+    while (i < linkAmount)/*there are links to choose*/
+    {
+        //s = sorted[i];
+        targetVertex = (linksPtr + i)->getTarget(); //this is the information for Residual
+        capacity = (linksPtr + i)->getCapacity();
         avFlow = capacity - (linksPtr + i)->getFlow();
-        alive = (linksPtr + i)->getAlive();
+        alive = (linksPtr + i)->getAlive(); //end of info for residual
+        for (int j = 0; j < nodeAmount; j++)
+        {
+            (nodesPtr + j)->setVisited(false);
+        }
 
         if (alive == true/*the links are alive*/)
         {
@@ -374,14 +393,49 @@ int Residual(int target, Node&D, Node *nodesPtr, int lgFlow)  //target is the cu
     //get the necessary info from the current node
     linksPtr = (nodesPtr + target)->getLinks();
     linkAmount = (nodesPtr + target)->getLinksAmount();
-    curVertex = (nodesPtr)->getVertex();
+    //curVertex = (nodesPtr)->getVertex();
 
-    //sort the links by most avaiable flow !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //sort the links by most avaiable flow 
+
+    /*
+    int *hold = new int[linkAmount];
+    int *sorted = new int[linkAmount];
+  
+    int maxLinkNum = linkAmount;
+    int maxFlow = 0;
+    for (int i = 0; i < maxLinkNum; i++) //this should partially sort the list
+    {
+        targetVertex = (linksPtr + i)->getTarget();
+        capacity = (linksPtr + i)->getCapacity();
+        avFlow = capacity - (linksPtr + i)->getFlow();//avaiable flow
+        hold[i] = avFlow; //this is to place each flow in a array
+        sorted[i] = i;
+    }
+    int temphold;//temp for hold
+    int temp; //temp for sorted
+    for (int i = 1; i < linkAmount; i++) //this is insertion sort to sort link saturation
+    {
+        for (int j = i; j >= 1; j--)
+        {
+            if (hold[j] > hold[j - 1])// if emement further in the array is greater
+            {
+                temphold = hold[j];//hold
+                temp = sorted[j];//sorted
+                hold[j] = hold[j - 1];//hold
+                sorted[j] = sorted[j - 1];//sorted
+                hold[j - 1] = temphold;//hold
+                sorted[j - 1] = temp;//sorted
+            }
+        }
+    }
+    delete[] hold;
 
 
+    int s;*/
     //goes through each node it will visit
     while (i < linkAmount) //while there are still links from G to visit
     {
+        //s = sorted[0];
         alive = (linksPtr + i)->getAlive();
         if (alive == true && (nodesPtr + target)->getVisited() != true) /*the link is alive and not visited*/
         {
@@ -399,13 +453,15 @@ int Residual(int target, Node&D, Node *nodesPtr, int lgFlow)  //target is the cu
             else {//the new lowest capacity flow of a link
                 (linksPtr + i)->setFlow(flow);
                 (nodesPtr + target)->setVisited(true);
+                //delete[] sorted;
                 return flow;
             }
         }
         i++;
 
     }
-    return 0;
+    //delete[] sorted;
+    return flow;
 }
 
 int FlowOfEnd(Node& D, Node *nodesPtr) //I don't think this works nor is it necessary.
@@ -428,12 +484,12 @@ int FlowOfEnd(Node& D, Node *nodesPtr) //I don't think this works nor is it nece
 void ResetAll(Node *nodesPtr, const int nodeAmount, const int totalLink)
 {
     Link *linkPtr;
-    for (int i = 0; i < nodeAmount; i++)
+    for (int i = 0; i < nodeAmount; i++) //this resets the depth and the visted for all nodes
     {
         (nodesPtr + i)->setVisited(false);
         (nodesPtr + i)->setDistance(0);
     }
-    for (int i = 0; i < totalLink; i++)
+    for (int i = 0; i < totalLink; i++) //this resets all the link values that have been altered
     {
         (linkPtr + i)->setFlow(0);
         (linkPtr + i)->setAlive(true);
@@ -442,25 +498,24 @@ void ResetAll(Node *nodesPtr, const int nodeAmount, const int totalLink)
 }
 
 void SetDist(Node& S, Node& D, Node *nodesPtr, const int nodeAmount) {
-    int randomNumb;
-    bool run;
-    int curr = 0;
+    int randomNumb; //random number
+    int curr = 0;   //help with getting max distance
     int maxDis = 0;
 
-    while (maxDis <= 8) {
+    while (maxDis < 9) {
         //set random S and D nodes
         randomNumb = rand() % nodeAmount;
-        S.setVertex((nodesPtr + randomNumb)->getVertex());
+        S.setVertex((nodesPtr + randomNumb)->getVertex()); //sets the starting node S to a random spot
 
-        bfs(S, nodesPtr, nodeAmount);
+        bfs(S, nodesPtr, nodeAmount);   //calculates all the distances from S
         for (int i = 0; i < nodeAmount; i++)
         {
-            curr = (nodesPtr + i)->getDistance();
-            if (curr > maxDis)
+            curr = (nodesPtr + i)->getDistance(); //gets the distance for each node
+            if (curr > maxDis) //if a node is larger
             {
-                maxDis = curr;
-                D.setVertex((nodesPtr + i)->getVertex());
-                D.setDistance((nodesPtr + i)->getDistance());
+                maxDis = curr;//sets the values to the new furthest node
+                D.setVertex( (nodesPtr + i)->getVertex() );
+                D.setDistance( (nodesPtr + i)->getDistance() );
             }
         }
 
@@ -468,4 +523,40 @@ void SetDist(Node& S, Node& D, Node *nodesPtr, const int nodeAmount) {
         cout << "D's distance from S is " << D.getDistance() << "." << endl;
     }
     
+}
+
+
+
+
+
+
+/*    __________________OUR_ALGORITHMS___________________________*/
+
+
+void Static_Attack(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int totalLink)
+{
+
+
+
+
+}
+
+
+void Reactive_Attack(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int totalLink)
+{
+
+
+
+
+}
+
+
+void Random_Attack(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int totalLink)
+{
+
+
+
+
+
+
 }
