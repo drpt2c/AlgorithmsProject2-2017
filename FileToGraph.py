@@ -7,13 +7,14 @@ Stat_X = [] #static time
 Stat_Y = [] #static data
 Reac_X = [] #reactive time
 Reac_Y = [] #reactive data
-#Rand_X = [] #random time
-#Rand_Y = [] #random data
+Rand_X = [] #random time
+Rand_Y = [] #random data
 
 #variables
 ran = False #this is for reading word by word
 done = False
 Redone = True
+Radone = True
 with open("data.dat", "r") as f: #read data in from the file
     for line in f:
         if "Static" in line or done is not True: #this adds the data for the static attack
@@ -22,7 +23,7 @@ with open("data.dat", "r") as f: #read data in from the file
                 if "End" in line:
                     done = True
                     Redone = False
-                if "Reactive" not in line and "Static" not in line and done is not True:
+                if "Reactive" not in line and "Static" not in line and "Random" not in line and done is not True:
                     if ran is not True and "Static" not in line:
                         Stat_X.append(word)
                         ran = True
@@ -35,12 +36,23 @@ with open("data.dat", "r") as f: #read data in from the file
             for word in line.split():
                 if "End" in line:
                     Redone = True
-                if "Reactive" not in line and Redone is not True:
+                if "Reactive" not in line and "Random" not in line and Redone is not True:
                     if ran is not True and "Reactive" not in line:
                         Reac_X.append(word)
                         ran = True
                     else:
                         Reac_Y.append(word)
+        elif "Random" in line or Radone is not True or done is True:
+            ran = False
+            for word in line.split():
+                if "End" in line:
+                    Radone = True
+                if "Random" not in line and Radone is not True:
+                    if ran is not True and "Random" not in line:
+                        Rand_X.append(word)
+                        ran = True
+                    else:
+                        Rand_Y.append(word)
 
         else:
             print("Failed to match")
