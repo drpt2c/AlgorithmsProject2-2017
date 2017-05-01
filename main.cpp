@@ -143,33 +143,22 @@ void loadFile(Node *nodesPtr, int& nodeAmount, int& totalLink)
 
 void setDestinationNodes(Node& S, Node& D, Node *nodesPtr, const int nodeAmount)
 {
-    bool farApart = false;
     int randomNumb;
-    int d;
     
-    while(!farApart)
+    while(S.getVertex() == -1 || D.getVertex() == -1)
     {
-        //set random S and D nodes
-        randomNumb = rand() % nodeAmount;
-        S.setVertex( (nodesPtr + randomNumb)->getVertex() );
-        randomNumb = rand() % nodeAmount;
-        D.setVertex( (nodesPtr + randomNumb)->getVertex() );
         
-        cout << "Starting Node Attempt: " << S.getVertex() << endl;
-        cout << "Ending Node Attempt: " << D.getVertex() << endl;
+        randomNumb = rand() % nodeAmount;
+        if((nodePtr + randomNumb)->getLinkAmount() > 0)
+        {
+            S.setVertex((nodePtr + randomNumb)->getVertex());        
+        }
+        randomNumb = rand() % nodeAmount;
+        if((nodePtr + randomNumb)->getLinkAmount() > 0 && (nodePtr + randomNumb)->getVertex() != S.getVertex())
+        {
+            D.setVertex((nodePtr + randomNumb)->getVertex());
+        }
 
-        //measure distance to make sure they are far enough apart
-        d = measureShortestDistance(S, D, nodesPtr, nodeAmount);
-        if(d >= 8)
-        {
-            farApart = true;
-            cout << "Successful S and D assignment: " << endl;
-        }
-        else
-        {
-            cout << "random S and D, failed, trying again." << endl;
-        }
-            
     }
 }
 
@@ -297,7 +286,7 @@ bool bfs(Node& S, Node& D, Node *nodesPtr, const int nodeAmount) {
 }
 
 
-int MaxFlow(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int totalLink) { //if the flow is 0, the network is dead
+int MaxFlow(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int totalLink) {//if the flow is 0, the network is dead
     Link *linksPtr;     //useful variables
     int linkAmount;
     int targetVertex;
@@ -338,8 +327,6 @@ int MaxFlow(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int to
         }
         i++;
     }
-
-
 
     return totalFlow;
 }
@@ -419,7 +406,7 @@ int FlowOfEnd(Node& D, Node *nodesPtr) //I don't think this works nor is it nece
 void ResetAll(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int totalLink)
 {
     Link *linkPtr;
-    int linkAmount
+    int linkAmount;
     
     for (int i = 0; i < nodeAmount; i++)
     {
@@ -428,11 +415,11 @@ void ResetAll(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int 
         linkPtr = (nodesPtr + i)->getLinks();
         linkAmount = (nodesPtr + i)->getLinksAmount();
         
-        for (int i = 0; i < linkAmount; i++)
+        for (int j = 0; j < linkAmount; j++)
         {
-            (linkPtr + i)->setFlow(0);
-            (linkPtr + i)->setAlive(true);
-            (linkPtr + i)->setBreak(true);
+            (linkPtr + j)->setFlow(0);
+            (linkPtr + j)->setAlive(true);
+            (linkPtr + j)->setBreak(true);
         }
 
     }
@@ -472,7 +459,9 @@ void addKLinks(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int
 {
     int randomNumb;
     Link Klink;
+    int nodesK[100]; //used to save S's K nodes so that D cannot have a K node that is the same
     
+    Klink.setCapacity(20);
     Klink.setSource(S.getVertex());
     Klink.setBreak(false);
     
@@ -486,6 +475,7 @@ void addKLinks(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int
         {
             Klink.setTarget((nodesPtr + randomNumb)->getVertex());
             S.addLink(Klink);
+            nodesK[i] = (nodesPtr + randomNumb)->getVertex();
             cout << "ADDED LINK FROM S WITH TARGET: " << (nodesPtr + randomNumb)->getVertex() << endl;
         }
         else
@@ -497,10 +487,16 @@ void addKLinks(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int
     //make klinks for D
     for(int i = 0; i < numberK; i++)
     {
+        allowed = true;
         randomNumb = rand() % nodeAmount;
+        for(int j = 0; j < numberK; j++)
+        {
+            if ((nodesPtr + randomNumb)->getVertex() == nodesK[i])
+                allowed = false;
+        }        
         
-        //make sure the link is not connected to S
-        if((nodesPtr + randomNumb)->getVertex() != S.getVertex())
+        //make sure the link is not connected to S or its K nodes
+        if((nodesPtr + randomNumb)->getVertex() != S.getVertex() && allowed)
         {
             Klink.setTarget((nodesPtr + randomNumb)->getVertex());
             D.addLink(Klink);
@@ -513,7 +509,53 @@ void addKLinks(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int
 
 }
 
-
+int fordFulkerson(Node s, Node t, Node node)
+{
+    int u, v;
+ 
+    // Create a residual graph and fill the residual graph with
+    // given capacities in the original graph as residual capacities
+    // in residual graph
+    int rGraph[V][V]; // Residual graph where rGraph[i][j] indicates 
+                     // residual capacity of edge from i to j (if there
+                     // is an edge. If rGraph[i][j] is 0, then there is not)  
+    for (u = 0; u < V; u++)
+        for (v = 0; v < V; v++)
+             rGraph[u][v] = graph[u][v];
+ 
+    int parent[V];  // This array is filled by BFS and to store path
+ 
+    int max_flow = 0;  // There is no flow initially
+ 
+    // Augment the flow while tere is path from source to sink
+    while (bfs(rGraph, s, t, parent))
+    {
+        // Find minimum residual capacity of the edges along the
+        // path filled by BFS. Or we can say find the maximum flow
+        // through the path found.
+        int path_flow = INT_MAX;
+        for (v=t; v!=s; v=parent[v])
+        {
+            u = parent[v];
+            path_flow = min(path_flow, rGraph[u][v]);
+        }
+ 
+        // update residual capacities of the edges and reverse edges
+        // along the path
+        for (v=t; v != s; v=parent[v])
+        {
+            u = parent[v];
+            rGraph[u][v] -= path_flow;
+            rGraph[v][u] += path_flow;
+        }
+ 
+        // Add path flow to overall flow
+        max_flow += path_flow;
+    }
+ 
+    // Return the overall flow
+    return max_flow;
+}
 
 
 
