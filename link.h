@@ -18,7 +18,9 @@ class Link
         bool getAlive() { return alive; } 
         bool getBreak() {return breakable; }
         void setBreak(bool val) { breakable = val; }
-        void setAlive(bool val) { alive = val; } 
+        void setAlive(bool val) { alive = val; }
+		int getStoredCapacity() { return storedCapacity; }
+		void setStoredCapacity(int val) { storedCapacity = val; }
     private:
         int source;
         int target;
@@ -26,7 +28,7 @@ class Link
         int flow;       //the current amount of the capacity used
         bool alive;
         bool breakable; //if this is included in K, then it cannot be broken every
-        
+		int storedCapacity;
 };
 
 #endif

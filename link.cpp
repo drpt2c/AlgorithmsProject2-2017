@@ -10,6 +10,7 @@ Link::Link()
     capacity = 1;
     flow = 0;
     breakable = true;
+	storedCapacity = 0;
 }
 
 Link::Link(int s, int t, int c, bool a)
@@ -20,4 +21,5 @@ Link::Link(int s, int t, int c, bool a)
     alive = a;
     flow = 0;
     breakable = true;
+	storedCapacity = 0;
 }

@@ -23,8 +23,7 @@ int MaxFlow(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int to
 //This is a resusive function to get the max flow
 int Residual(int target, Node&D, Node *nodesPtr, int lgFlow);
 
-//checks the flow at D, which should accurately tell what the current flow is
-int FlowOfEnd(Node& D, Node *nodesPtr);
+//checks the flow at D, which should accurately tell what the current flow i
 
 //this clears all flow and visited nodes
 void ResetAll(Node *nodesPtr, const int nodeAmount, const int totalLink);
@@ -38,10 +37,10 @@ void addKLinks(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int
 void SetNodes(Node *nodesPtr, const int nodeAmount, const int totalLink);
 
 //this is to check the flow of Static Algorithms
-int StaticFlow(Node& S, Node& D, Node *nodesPtr, int deadNode, int deadLink, int prevFlow);
+int StaticFlow(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int totalLink);
 
 //This is used for StaticFlow to traverse down the graph
-int StaticFlowResidual(int target, Node& D, Node * nodesPtr, int deadNode, int deadLink, int lostFlow, bool found);
+int StaticFlowResidual(int target, Node&D, Node *nodesPtr, int lgFlow);
 
 void ClearFlow(Node& S, Node& D, Node * nodesPtr, const int nodeAmount);
 
@@ -66,41 +65,54 @@ void Random_Attack(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const
 
 int main()
 {
-    int done;
-    int initialMaxFlow = 0;//this is the starting maxflow
+	int done;
+	int initialMaxFlow = 0;//this is the starting maxflow
 
-    srand(time(NULL));
-    //arrays of nodes/links and their pointers
-    Node *allNodes = new Node[1000];
-    Node *nodesPtr;
+	srand(time(NULL));
+	//arrays of nodes/links and their pointers
+	Node *allNodes = new Node[1000];
+	Node *nodesPtr;
 
-    Node S; //starting node
-    Node D; //ending node
-    
-    int nodeAmount = 0; //used to initialize Nodes and Links from file
-    int totalLink = 0; //used to clear flow of the links
-    
-    nodesPtr = allNodes;
-    
+	Node S; //starting node
+	Node D; //ending node
+
+	int nodeAmount = 0; //used to initialize Nodes and Links from file
+	int totalLink = 0; //used to clear flow of the links
+
+	nodesPtr = allNodes;
+
 	cout << "Loading in Graph" << endl;
-    loadFile(nodesPtr, nodeAmount, totalLink);
+	loadFile(nodesPtr, nodeAmount, totalLink);
 	cout << "Graph done loading." << endl;
 
-    //Set all nodes with no edges to random links
-    //SetNodes(nodesPtr, nodeAmount, totalLink);
-    
-    SetDist(S, D, nodesPtr, nodeAmount);
-    //setDestinationNodes(S, D, nodesPtr, nodeAmount);
+	//Set all nodes with no edges to random links
+	//SetNodes(nodesPtr, nodeAmount, totalLink);
 
-    addKLinks(S, D, nodesPtr, nodeAmount, 50);
-    
+	SetDist(S, D, nodesPtr, nodeAmount);
+	//setDestinationNodes(S, D, nodesPtr, nodeAmount);
+
+
+	initializeKLinks(S, D, nodesPtr, nodeAmount, 50);
+
+	int temp = 0;
+	Link *linkPtr;
+	for (int i = 0; i < nodeAmount; i++) //sets all the capacities
+	{
+		temp = (nodesPtr + i)->getLinksAmount();
+		linkPtr = (nodesPtr + i)->getLinks();
+		for (int j = 0; j < temp; j++)
+		{
+			(linkPtr + j)->setStoredCapacity((linkPtr + j)->getCapacity());
+		}
+	}
+
 	cout << "Starting Max Flow" << endl;
-    initialMaxFlow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
-    cout << "Initial Max Flow is " << initialMaxFlow << "." << endl;
+	initialMaxFlow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
+	cout << "Initial Max Flow is " << initialMaxFlow << "." << endl;
 
 
-    cout << "Total Number of Nodes: " << nodeAmount << endl;
-    cout << "Total Number of Edges: " << totalLink << endl;
+	cout << "Total Number of Nodes: " << nodeAmount << endl;
+	cout << "Total Number of Edges: " << totalLink << endl;
 
 
 	cin >> done;
@@ -109,56 +121,74 @@ int main()
     //---------------------------------------Static Routing ----------------------//
     
 	int prevFlow = 0;
-	//Static Attack
+	//-----------------Static Attack----------------------//
 	ofstream SS;
 	SS.open("static.dat");
 	SS << "Static\n";
 
-    int i = 0;
-    int flow = initialMaxFlow;
+	int i = 0;
+	int flow = initialMaxFlow;
+	int lostFlow;
 	prevFlow = flow;
 	cout << "Starting the Static Attack on the Static Routing" << endl;
 	SS << i << " " << flow << "\n";
 	i++;
 
-    while (flow != 0) {
-        Static_Attack(S, D, nodesPtr, nodeAmount, totalLink);
-		flow = StaticFlow(S, D, nodesPtr, thisNodeisDead, thisLInkisDead, prevFlow);
+	while (flow != 0)
+	{
+		Static_Attack(S, D, nodesPtr, nodeAmount, totalLink);
+
+		Link* linkPtr = (nodesPtr + thisNodeisDead)->getLinks();
+		(linkPtr + thisLInkisDead)->setCapacity(0);
+
+		flow = StaticFlow(S, D, nodesPtr, nodeAmount, totalLink);
 		SS << i << " " << flow << "\n";
 		i++;
 		cout << "Attack finshed, new flow is " << flow << endl;
 		prevFlow = flow;
-		cout << "SAS Round " << i << "with a flow of " << flow << endl;
-    }
-    
+		cout << "SS Round " << i << "with a flow of " << flow << endl;
+		SS << i << " " << flow << "\n";
+	}
+	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
+	cin >> done;
 
-    ResetAll(nodesPtr, nodeAmount, totalLink);
+	ResetAll(nodesPtr, nodeAmount, totalLink);
 	initialMaxFlow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
+	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
 
-    //Reactive Attack//
+    //-----------------Reactive Attack---------------------//
 	SS << "Reactive\n";
-
-    i = 0;
-    flow = initialMaxFlow;
+	i = 0;
+	flow = initialMaxFlow;
 	prevFlow = flow;
 	cout << "Starting the Reactive Attack on the Static Routing" << endl;
 	SS << i << " " << flow << "\n";
 	i++;
-    while (flow != 0)
-    {
-        Reactive_Attack(S, D, nodesPtr, nodeAmount, totalLink);
-		flow = StaticFlow(S, D, nodesPtr, thisNodeisDead, thisLInkisDead, prevFlow);
-		SS << i << " " << flow << "\n";
-        i++;
-		prevFlow = flow;
-		cout << "RAS Round " << i << " with a flow of " << flow << endl;
-    }
-	SS << "\n";
-    
-    ResetAll(nodesPtr, nodeAmount, totalLink);
-	initialMaxFlow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
 
-    //Random Attack//
+	while (flow != 0)
+	{
+		bfs(S, nodesPtr, nodeAmount);
+		Reactive_Attack(S, D, nodesPtr, nodeAmount, totalLink);
+
+		Link* linkPtr = (nodesPtr + thisNodeisDead)->getLinks();
+		(linkPtr + thisLInkisDead)->setCapacity(0);
+
+		flow = StaticFlow(S, D, nodesPtr, nodeAmount, totalLink);
+		SS << i << " " << flow << "\n";
+		i++;
+		cout << "Attack finshed, new flow is " << flow << endl;
+		prevFlow = flow;
+		cout << "SS Round " << i << "with a flow of " << flow << endl;
+		SS << i << " " << flow << "\n";
+	}
+	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
+	cin >> done;
+
+	ResetAll(nodesPtr, nodeAmount, totalLink);
+	initialMaxFlow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
+	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
+
+    //=---------------Random Attack-----------------------=//
 
 	SS << "Random\n";
 
@@ -168,15 +198,29 @@ int main()
 	cout << "Randomly Attacking the Static Routing" << endl;
 	SS << i << " " << flow << "\n";
 	i++;
-    while (flow != 0)
-    {
-        Random_Attack(S, D, nodesPtr, nodeAmount, totalLink);
-		flow = StaticFlow(S, D, nodesPtr, thisNodeisDead, thisLInkisDead, prevFlow);
+	while (flow != 0)
+	{
+		Random_Attack(S, D, nodesPtr, nodeAmount, totalLink);
+
+		Link* linkPtr = (nodesPtr + thisNodeisDead)->getLinks();
+		(linkPtr + thisLInkisDead)->setCapacity(0);
+
+		flow = StaticFlow(S, D, nodesPtr, nodeAmount, totalLink);
 		SS << i << " " << flow << "\n";
 		i++;
+		cout << "Attack finshed, new flow is " << flow << endl;
 		prevFlow = flow;
-		cout << "RaS Round " << i << "with a flow of " << flow << endl;
-    }
+		cout << "SS Round " << i << "with a flow of " << flow << endl;
+		SS << i << " " << flow << "\n";
+	}
+	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
+	cin >> done;
+
+	ResetAll(nodesPtr, nodeAmount, totalLink);
+	initialMaxFlow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
+	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
+
+	SS << "\nEnd\n";
 	SS.close();
 	
 	ResetAll(nodesPtr, nodeAmount, totalLink);
@@ -240,11 +284,14 @@ int main()
 		i++;														//new timestamp
 	}
 
+	SR << "\nEnd\n";
 	SR.close();
 	cin >> done;
-	/*
+	
 	//------------------------------------K Static Graphs------------------------------------//
 	
+	ResetKLinks(S, D, nodeAmount, nodesPtr);
+
 	ofstream SSK;
 	SSK.open("k_static.dat");
 	SSK << "Static\n";
@@ -253,13 +300,27 @@ int main()
 	flow = initialMaxFlow;
 	prevFlow = flow;
 	cout << "Starting the Static Attack on the Static Routing" << endl;
-	while (flow != 0) {
+	while (flow != 0)
+	{
 		Static_Attack(S, D, nodesPtr, nodeAmount, totalLink);
-		flow = StaticFlow(S, D, nodesPtr, thisNodeisDead, thisLInkisDead, prevFlow);
-		SSK << i << " " << flow << "\n";
+
+		Link* linkPtr = (nodesPtr + thisNodeisDead)->getLinks();
+		(linkPtr + thisLInkisDead)->setCapacity(0);
+
+		flow = StaticFlow(S, D, nodesPtr, nodeAmount, totalLink);
+		SS << i << " " << flow << "\n";
 		i++;
+		cout << "Attack finshed, new flow is " << flow << endl;
 		prevFlow = flow;
+		cout << "SS Round " << i << "with a flow of " << flow << endl;
+		SS << i << " " << flow << "\n";
 	}
+	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
+	cin >> done;
+
+	ResetAll(nodesPtr, nodeAmount, totalLink);
+	initialMaxFlow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
+	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
 	SSK << "\n";
 
 
@@ -275,12 +336,26 @@ int main()
 	cout << "Starting the Reactive Attack on the Static Routing" << endl;
 	while (flow != 0)
 	{
+		bfs(S, nodesPtr, nodeAmount);
 		Reactive_Attack(S, D, nodesPtr, nodeAmount, totalLink);
-		flow = StaticFlow(S, D, nodesPtr, thisNodeisDead, thisLInkisDead, prevFlow);
-		SSK << i << " " << flow << "\n";
+
+		Link* linkPtr = (nodesPtr + thisNodeisDead)->getLinks();
+		(linkPtr + thisLInkisDead)->setCapacity(0);
+
+		flow = StaticFlow(S, D, nodesPtr, nodeAmount, totalLink);
+		SS << i << " " << flow << "\n";
 		i++;
+		cout << "Attack finshed, new flow is " << flow << endl;
 		prevFlow = flow;
+		cout << "SS Round " << i << "with a flow of " << flow << endl;
+		SS << i << " " << flow << "\n";
 	}
+	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
+	cin >> done;
+
+	ResetAll(nodesPtr, nodeAmount, totalLink);
+	initialMaxFlow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
+	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
 	SSK << "\n";
 
 	ResetAll(nodesPtr, nodeAmount, totalLink);
@@ -295,32 +370,59 @@ int main()
 	while (flow != 0)
 	{
 		Random_Attack(S, D, nodesPtr, nodeAmount, totalLink);
-		flow = StaticFlow(S, D, nodesPtr, thisNodeisDead, thisLInkisDead, prevFlow);
-		SSK << i << " " << flow << "\n";
+
+		Link* linkPtr = (nodesPtr + thisNodeisDead)->getLinks();
+		(linkPtr + thisLInkisDead)->setCapacity(0);
+
+		flow = StaticFlow(S, D, nodesPtr, nodeAmount, totalLink);
+		SS << i << " " << flow << "\n";
 		i++;
+		cout << "Attack finshed, new flow is " << flow << endl;
 		prevFlow = flow;
+		cout << "SS Round " << i << "with a flow of " << flow << endl;
+		SS << i << " " << flow << "\n";
 	}
+	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
+	cin >> done;
+
+	ResetAll(nodesPtr, nodeAmount, totalLink);
+	initialMaxFlow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
+	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
+	
 	SSK.close();
 	
 	ResetAll(nodesPtr, nodeAmount, totalLink);
 
 	//------------------------------------K Reactive Graphs----------------------------------//
+	cout << "K Reactive Graphs Starting!!!!!!" << endl << endl;
+	ResetKLinks(S, D, nodeAmount, nodesPtr);
+	addKLinks(S, D, nodesPtr, nodeAmount, 30);
+
 	ofstream SKR;
 	SKR.open("k_reactive.dat");
 	SKR << "Static\n";
 
-	i = 0;
+	int round = 0;
 	flow = initialMaxFlow;
 	cout << "Starting the Static Attack on Reactive Routing" << endl;
-	while (flow != 0) {
-		Static_Attack(S, D, nodesPtr, nodeAmount, totalLink);
-		flow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
-		SKR << i << " " << flow << "\n";
-		ClearFlow(S, D, nodesPtr, nodeAmount);
-		i++;
+	for(int i = 30; i < 60; i++)
+	{
+		addKlink(S, D, nodesPtr, nodeAmount);
+		while (flow != 0)
+		{
+			flow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
+			Static_Attack(S, D, nodesPtr, nodeAmount, totalLink);
+			ClearFlow(S, D, nodesPtr, nodeAmount);
+			round++;
+		}
+		SKR << i << " " << round << "\n";
+		cout << "Round " << i << endl;
+		ResetAll(nodesPtr, nodeAmount, totalLink);
+		
+		flow = initialMaxFlow;
 	}
 
-	SKR << "\n";
+	SKR << "End\n\n";
 
 	ResetAll(nodesPtr, nodeAmount, totalLink);
 
@@ -328,38 +430,65 @@ int main()
 
 	SKR << "Reactive\n";
 
-	i = 0;
+	ResetKLinks(S, D, nodeAmount, nodesPtr);
+	addKLinks(S, D, nodesPtr, nodeAmount, 30);
+
+	round = 0;
 	flow = initialMaxFlow;
 	cout << "Started the Reactive Attack on Reactive Routing" << endl;
-	while (flow != 0)
+	for(int i = 30; i <= 60; i++)
 	{
-		Reactive_Attack(S, D, nodesPtr, nodeAmount, totalLink);
-		flow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
-		SKR << i << " " << flow << "\n";
-		ClearFlow(S, D, nodesPtr, nodeAmount);
-		i++;
+		addKlink(S, D, nodesPtr, nodeAmount);
+		while (flow != 0)
+		{
+			flow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
+			Reactive_Attack(S, D, nodesPtr, nodeAmount, totalLink);
+			
+			ClearFlow(S, D, nodesPtr, nodeAmount);
+			round++;
+		}
+		SKR << i << " " << round << "\n";
+		cout << "Round " << i << endl;
+		ResetAll(nodesPtr, nodeAmount, totalLink);
+
+		flow = initialMaxFlow;
 	}
 
 
 	ResetAll(nodesPtr, nodeAmount, totalLink);
-	//Random Attack//
+	ResetKLinks(S, D, nodeAmount, nodesPtr);
+	addKLinks(S, D, nodesPtr, nodeAmount, 30);
+	
+
+	//-------------------------------Random Attack-----------------//
+	SKR << "End\n\n";
 	SKR << "Random\n";
 
-	i = 0;
+	round = 0;
 	flow = initialMaxFlow;
 	cout << "Randomly Attacking the Reactive Routing" << endl;
-	while (flow != 0)
+	for(int i = 30; i <= 60; i++)
 	{
-		Random_Attack(S, D, nodesPtr, nodeAmount, totalLink);
-		flow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
-		SKR << i << " " << flow << "\n";
-		ClearFlow(S, D, nodesPtr, nodeAmount);
-		i++;
+		addKlink(S, D, nodesPtr, nodeAmount);
+		while (flow != 0)
+		{
+			flow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
+			Random_Attack(S, D, nodesPtr, nodeAmount, totalLink);
+			
+			ClearFlow(S, D, nodesPtr, nodeAmount);
+			round++;
+		}
+		SKR << i << " " << round << "\n";
+		cout << "Round " << i << endl;
+		ResetAll(nodesPtr, nodeAmount, totalLink);
+
+		flow = initialMaxFlow;
 	}
 
+	SKR << "End\n";
 	SKR.close();
 
-	*/
+	
 
 
 	//--------------------------------------Completed------------------------------//
@@ -449,7 +578,7 @@ void loadFile(Node *nodesPtr, int& nodeAmount, int& totalLink)
             cout << "\t capacity: " << (linkPtr + j)->getCapacity() << endl;
         }
     }
-    
+
     return;
 }
 
@@ -658,142 +787,121 @@ int Residual(int target, Node&D, Node *nodesPtr, int lgFlow)  //target is the cu
 
 }
 
-int StaticFlow(Node& S, Node& D, Node *nodesPtr, int deadNode, int deadLink, int prevFlow)
+int StaticFlow(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int totalLink)
 { //this function will the check and readd the flow after an attack on Static Routing
 	Link *linkPtr;
-	int run = 0;
-	bool done = false;
-	int search = 0;
-	int next = 0;
-	int deadFlow = 0;
-	int linkAmount = 0;
-
-	int totalFlow = 0;
-	int flow = 0;
-
-	linkAmount = S.getLinksAmount();
-	linkPtr = (nodesPtr + deadNode)->getLinks();
-	deadFlow = (linkPtr + deadLink)->getFlow();
-	linkPtr = S.getLinks();
-	while (run < linkAmount && done == false) //search for the dead node an remove the path from the network
+	for (int i = 0; i < nodeAmount; i++)//reset the flow of everything
 	{
-		next = (linkPtr + run)->getTarget();
-		search = StaticFlowResidual(next, D, nodesPtr, thisNodeisDead, thisLInkisDead, deadFlow, false);
-		if (search == -1) //if we found D
+		linkPtr = (nodesPtr + i)->getLinks(); //gets the amount of links for each node
+		for (int k = 0; k < (nodesPtr + i)->getLinksAmount(); k++)
 		{
-			done = true;
+			(linkPtr + k)->setFlow(0);
 		}
-		if(search == 0)
-		{ }
-		run++;
-	}
+	}//resets all the flow, because MaxFlow is used for reactive only
 
-	//add up the flow
+	int currentRun = 1; //total of current run
+	int totalFlow = 0;  //total of all runs
+	int flow = 0;           //total of one run
+	int target;                     //the next node to go to
+	int linkAmount;         //the total links in S
+	int lowFlow;            //lowestflow of S
+	int capacity;           //cacpity of the link
+
 	linkAmount = S.getLinksAmount();
 	linkPtr = S.getLinks();
-	for (int i = 0; i < linkAmount; i++)
+
+	while (currentRun > 0) //until there is no more paths to go to
 	{
-		totalFlow = totalFlow + (linkPtr + i)->getFlow();
+		currentRun = 0; //nothing has gone this round yet
+		for (int i = 0; i < linkAmount; i++) //start of the round
+		{
+			target = (linkPtr + i)->getTarget();                    //grabs the next node
+			capacity = (linkPtr + i)->getCapacity();                //grabs capacity
+			lowFlow = capacity - (linkPtr + i)->getFlow();  //grabs the flow of the link
+			flow = StaticFlowResidual(target, D, nodesPtr, lowFlow);  //gets the lowest flow for each path
+			(linkPtr + i)->setFlow(flow);                                   //sets the links returned flow
+																			//cout << "Set link to flow of " << (linkPtr + i)->getFlow() << endl;
+			currentRun = currentRun + flow;                                 //the total of a run
+
+		} //round is over
+		totalFlow = totalFlow + currentRun; //total of all runs
+
 	}
-	cout << "The initial totalFlow is " << totalFlow << endl;
+
+	//mark nodes as inaccessable for static
+	for (int i = 0; i < nodeAmount; i++)
+	{
+		linkPtr = (nodesPtr + i)->getLinks();
+		linkAmount = (nodesPtr + i)->getLinksAmount();
+		for (int j = 0; j < linkAmount; j++)
+		{
+			if ((linkPtr + j)->getFlow() == 0 && (linkPtr + j)->getBreak() == true)
+			{
+				//(linkPtr + j)->setStoredCapacity((linkPtr + j)->getCapacity());
+				(linkPtr + j)->setCapacity(0);
+			}
+		}
+	}
 	return totalFlow;
+
 }
 
 //target is current node, D is end, nodesPtr, lowestFlow is the lowest Flow of path, deadNode & link is dead spot, lostFlow is the flow of deadNode and Link, found is for changing the path after a link has died
-int StaticFlowResidual(int target, Node& D, Node * nodesPtr, int deadNode, int deadLink, int lostFlow, bool found)
+int StaticFlowResidual(int target, Node&D, Node *nodesPtr, int lgFlow)
 { //this is the Recursive function for StaticFlow
 	Link *linkPtr;
-	int useless = 0;
-	int next = 0;
-	int linkAmount = 0;
-	int flow = 0;
-	//----------FOUND DEAD LINK------------//
-	linkPtr = (nodesPtr + deadNode)->getLinks();
-	if (target == (nodesPtr + deadNode)->getVertex()) //if found the dead link, we need to find D and kill everything after it
+	int linkAmount;
+	int capacity;
+	int flow;
+	int availFlow;
+	int lowestFlow;
+	int next;
+	int setFlow;
+	if (target == D.getVertex()) //if we are at D, we are done, return lowest flow
 	{
-		cout << "Found deadlink" << endl;
-		next = (linkPtr + deadLink)->getTarget();
-		useless = StaticFlowResidual(next, D, nodesPtr, deadNode, deadLink, lostFlow, true);
-		if (useless == -1) //if D was found
-		{
-			return -1;
-		}
-		else {
-			return 0; //if 0 then we found the dead link we need to set the path to 0
-		}
+
+		//cout << "We reached the D and the lowestFlow is " << lgFlow << endl;
+		return lgFlow; //lowestflow of all links
 	}
 
-	//-----After found----//
-	if (found == true) //this is called after we have found the deadlink
-	{
-		if (target == D.getVertex()) //if we found D after the links have been 
-		{
-			cout << "found D" << endl;
-			return -1; //this means we have reached D
-		}
-		linkAmount = (nodesPtr + target)->getLinksAmount(); //total Links, D has not been found
-		linkPtr = (nodesPtr + target)->getLinks();
-		for (int i = 0; i < linkAmount; i++)//check the path for each link from the node in the path
-		{
-			if ((linkPtr + i)->getFlow() != 0)//if it is on the path
-			{
-				next = (linkPtr + i)->getTarget();
-				if ((linkPtr + i)->getFlow() != 0) //if there is flow in the path
-				{
-					useless = StaticFlowResidual(next, D, nodesPtr, deadNode, deadLink, lostFlow, true); //find D
-					if (useless == -1) //if we already reached D
-					{
+	linkAmount = (nodesPtr + target)->getLinksAmount();
+	linkPtr = (nodesPtr + target)->getLinks();
 
-						(linkPtr + i)->setFlow(0);
-						return -1;
-					}
+	for (int j = 0; j < linkAmount; j++) //for each link in the current node
+	{
+		if ((linkPtr + j)->getAlive() == true) //if the link is still alive
+		{
+			capacity = (linkPtr + j)->getCapacity();
+			flow = (linkPtr + j)->getFlow();
+			availFlow = capacity - flow;                    //calculates the current available flow
+															//cout << "Available Flow " << availFlow << endl;
+			next = (linkPtr + j)->getTarget();              //next node to go to
+
+			if (availFlow > 0 && next != -1) //if there is flow available in the link
+			{
+				if (availFlow > lgFlow) //there is more flow avaiable in this link than others
+				{
+					lowestFlow = StaticFlowResidual(next, D, nodesPtr, lgFlow);
+					//cout << "LowestFlow " << lowestFlow << endl;
+				}
+				else {  //the flow is equal or less than the lowest flow of the path
+					lowestFlow = StaticFlowResidual(next, D, nodesPtr, availFlow);
+					//cout << "LowestFlow " << lowestFlow << endl;
+
+				}
+
+				if (lowestFlow > 0)     //if there is flow that has made it to D
+				{
+					setFlow = availFlow + lgFlow;
+					(linkPtr + j)->setFlow(setFlow); //sets the link to the lowest out of all in the path
+					return lowestFlow;      //we are done
 				}
 			}
 		}
-		return 0; //the path was not found
 
 	}
-	//---------Wrong Path----------------------//
-	if (target == D.getVertex())
-	{
-		return 0; //wrong path
-	}
+	return 0; //no path was found.
 
-
-	//---------BEFORE FOUND DEADLINK------------//
-	
-	linkAmount = (nodesPtr + target)->getLinksAmount();
-	linkPtr = (nodesPtr + target)->getLinks();
-	for (int i = 0; i < linkAmount; i++)//for each link in the node that has not reached the dead link at this point
-	{
-		if ((linkPtr + i)->getFlow() != 0) //if the link is in the path
-		{
-			useless = StaticFlowResidual(next, D, nodesPtr, deadNode, deadLink, lostFlow, false);
-			if (useless == -1)//we found the deadlink and D
-			{
-				(linkPtr + i)->setFlow(0);
-				return -1;
-			}
-		}
-	}
-	return 0;
-
-}
-
-int FlowOfEnd(Node& D, Node *nodesPtr) //I don't think this works nor is it necessary.
-{
-    //gets the amount and links of D(end node)
-    int endlinks = (nodesPtr + D.getVertex())->getLinksAmount();
-    Link *linksPtr = (nodesPtr + D.getVertex())->getLinks();
-    int totalFlow = 0;
-
-    //the current FLOW going into D
-    for (int i = 0; i < endlinks; i++)
-    {
-        totalFlow = (linksPtr + i)->getFlow();
-    }
-
-    return totalFlow;
 }
 
 void initializeKLinks(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int numberK)
@@ -805,6 +913,7 @@ void initializeKLinks(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, co
 	Klink.setCapacity(20);
 	Klink.setSource(S.getVertex());
 	Klink.setBreak(false);
+	Klink.setStoredCapacity(20);
 
 	//make klinks for S
 	for (int i = 0; i < numberK; i++)
@@ -898,7 +1007,7 @@ void addKlink(Node& S, Node& D, Node *nodesPtr, const int nodeAmount)
 		if (allowed && Klink.getTarget() != S.getVertex() && Klink.getTarget() != D.getVertex())
 		{
 			S.addLink(Klink);
-			cout << "ADDED KLINK TO S: " << Klink.getTarget() << endl;
+			//cout << "ADDED KLINK TO S: " << Klink.getTarget() << endl;
 		}
 
 	} while (!allowed);
@@ -925,8 +1034,8 @@ void addKlink(Node& S, Node& D, Node *nodesPtr, const int nodeAmount)
 		Klink.setSource((nodesPtr + randomNumb)->getVertex());
 		if (allowed && Klink.getSource() != S.getVertex() && Klink.getSource() != D.getVertex())
 		{
-			S.addLink(Klink);
-			cout << "ADDED KLINK FROM D: " << Klink.getSource() << endl;
+			(nodesPtr + randomNumb)->addLink(Klink);
+			//cout << "ADDED KLINK FROM D: " << Klink.getSource() << endl;
 		}
 
 	} while (!allowed);
@@ -941,24 +1050,24 @@ void ResetKLinks(Node& S, Node& D, const int nodeAmount, Node *nodesPtr)
 	//reset K links
 	linkPtr = S.getLinks();
 	linkAmount = S.getLinksAmount();
-	for (int i = 0; i < linkAmount; i++)
+	for (int i = 0; i < linkAmount; i++)//for each link in S
 	{
-		if ((linkPtr + i)->getBreak() == false)
+		if ((linkPtr + i)->getBreak() == false) //if the link is not breakable
 		{
-			(linkPtr + i)->setTarget(-1);
-			(linkPtr + i)->setBreak(true);
+			(linkPtr + i)->setTarget(-1); //set target to -1
+			(linkPtr + i)->setBreak(true); //set to breakable
 			S.decrementLinks();
 		}
 	}
-	for (int i = 0; i < nodeAmount; i++)
+	for (int i = 0; i < nodeAmount; i++) //for each node
 	{
-		linkPtr = (nodesPtr + i)->getLinks();
+		linkPtr = (nodesPtr + i)->getLinks(); //link pointer
 		linkAmount = (nodesPtr + i)->getLinksAmount();
-		if (linkAmount > 0)
+		if (linkAmount > 0) //if there are still links
 		{
-			for (int j = 0; j < nodeAmount; j++)
+			for (int j = 0; j < linkAmount; j++) //for every node
 			{
-				if ((linkPtr + j)->getTarget() == D.getVertex())
+				if ((linkPtr + j)->getTarget() == D.getVertex()) //
 				{
 					(linkPtr + j)->setTarget(-1);
 					(linkPtr + j)->setBreak(true);
@@ -978,13 +1087,14 @@ void ResetAll(Node *nodesPtr, const int nodeAmount, const int totalLink)
     for (int i = 0; i < nodeAmount; i++) //this resets the depth and the visted for all nodes
     {
         (nodesPtr + i)->setVisited(false);
-        (nodesPtr + i)->setDistance(0);
+        //(nodesPtr + i)->setDistance(0);
         linkPtr = (nodesPtr + i)->getLinks();
         linkAmount = (nodesPtr + i)->getLinksAmount();
         for (int k = 0; k < linkAmount; k++) //this resets all the link values that have been altered
         {
             (linkPtr + k)->setFlow(0);
             (linkPtr + k)->setAlive(true);
+			(linkPtr + k)->setCapacity((linkPtr + k)->getStoredCapacity());
             //(linkPtr + k)->setBreak(true);
         }
     }
