@@ -14,8 +14,8 @@ Rand_Y = [] #random data
 ran = False #this is for reading word by word
 done = False
 Redone = True
-Radone = True
-with open("data.dat", "r") as f: #read data in from the file
+Randone = True
+with open("static.dat", "r") as f: #read data in from the file
     for line in f:
         if "Static" in line or done is not True: #this adds the data for the static attack
             ran = False
@@ -29,26 +29,27 @@ with open("data.dat", "r") as f: #read data in from the file
                         ran = True
                     else:
                         Stat_Y.append(word)
-            else:
-                continue
-        elif "Reactive" in line or Redone is not True or done is True:
+                else:
+                   continue
+        elif "Reactive" in line or Redone is not True:
             ran = False
             for word in line.split():
                 if "End" in line:
                     Redone = True
+                    Randone = False
                 if "Reactive" not in line and "Random" not in line and Redone is not True:
                     if ran is not True and "Reactive" not in line:
                         Reac_X.append(word)
                         ran = True
                     else:
                         Reac_Y.append(word)
-        elif "Random" in line or Radone is not True or done is True:
+        elif "Random" in line or Randone is not True or (Redone is True and done is True):
             ran = False
             for word in line.split():
                 if "End" in line:
-                    Radone = True
-                if "Random" not in line and Radone is not True:
-                    if ran is not True and "Random" not in line:
+                    Randone = True
+                if "Random" not in line and Randone is not True:
+                    if ran is not True and "Reactive" not in line:
                         Rand_X.append(word)
                         ran = True
                     else:
@@ -63,8 +64,8 @@ check = True
 plt.suptitle("Flow Over Time", fontsize=30)
 plt.plot(Stat_X, Stat_Y, "r-", label="Stat")
 plt.plot(Reac_X, Reac_Y, "b-", label="Reac")
-#plt.plot(Rand_X, Rand_Y, "y-", label="Rand")
+plt.plot(Rand_X, Rand_Y, "y-", label="Rand")
 legend(bbox_to_anchor=(1.05, 1), loc=1, borderaxespad=0)
 plt.ylabel("Data")
 plt.xlabel("Time Round")
-plt.savefig("FlowOverTime.png")
+plt.savefig("New.png")

@@ -291,7 +291,7 @@ int main()
 	//------------------------------------K Static Graphs------------------------------------//
 	
 	ResetKLinks(S, D, nodeAmount, nodesPtr);
-
+	/*
 	ofstream SSK;
 	SSK.open("k_static.dat");
 	SSK << "Static\n";
@@ -390,7 +390,7 @@ int main()
 	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
 	
 	SSK.close();
-	
+	*/
 	ResetAll(nodesPtr, nodeAmount, totalLink);
 
 	//------------------------------------K Reactive Graphs----------------------------------//
@@ -415,7 +415,7 @@ int main()
 			ClearFlow(S, D, nodesPtr, nodeAmount);
 			round++;
 		}
-		SKR << i << " " << round << "\n";
+		SKR << round << " " << i << "\n";
 		cout << "Round " << i << endl;
 		ResetAll(nodesPtr, nodeAmount, totalLink);
 		
@@ -447,7 +447,7 @@ int main()
 			ClearFlow(S, D, nodesPtr, nodeAmount);
 			round++;
 		}
-		SKR << i << " " << round << "\n";
+		SKR << round << " " << i << "\n";
 		cout << "Round " << i << endl;
 		ResetAll(nodesPtr, nodeAmount, totalLink);
 
@@ -478,7 +478,7 @@ int main()
 			ClearFlow(S, D, nodesPtr, nodeAmount);
 			round++;
 		}
-		SKR << i << " " << round << "\n";
+		SKR << round << " " << i << "\n";
 		cout << "Round " << i << endl;
 		ResetAll(nodesPtr, nodeAmount, totalLink);
 
