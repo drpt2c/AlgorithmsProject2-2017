@@ -45,6 +45,12 @@ int StaticFlowResidual(int target, Node& D, Node * nodesPtr, int deadNode, int d
 
 void ClearFlow(Node& S, Node& D, Node * nodesPtr, const int nodeAmount);
 
+void ResetKLinks(Node& S, Node& D, const int nodeAmount, Node *nodesPtr);
+
+void addKlink(Node& S, Node& D, Node *nodesPtr, const int nodeAmount);
+
+void initializeKLinks(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int numberK);
+
 int thisNodeisDead;
 int thisLInkisDead;
 
@@ -92,6 +98,7 @@ int main()
     initialMaxFlow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
     cout << "Initial Max Flow is " << initialMaxFlow << "." << endl;
 
+
     cout << "Total Number of Nodes: " << nodeAmount << endl;
     cout << "Total Number of Edges: " << totalLink << endl;
 
@@ -111,9 +118,9 @@ int main()
     int flow = initialMaxFlow;
 	prevFlow = flow;
 	cout << "Starting the Static Attack on the Static Routing" << endl;
-	cout << "Inital Max Flow is " << flow << endl;
 	SS << i << " " << flow << "\n";
 	i++;
+
     while (flow != 0) {
         Static_Attack(S, D, nodesPtr, nodeAmount, totalLink);
 		flow = StaticFlow(S, D, nodesPtr, thisNodeisDead, thisLInkisDead, prevFlow);
@@ -126,6 +133,7 @@ int main()
     
 
     ResetAll(nodesPtr, nodeAmount, totalLink);
+	initialMaxFlow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
 
     //Reactive Attack//
 	SS << "Reactive\n";
@@ -134,6 +142,8 @@ int main()
     flow = initialMaxFlow;
 	prevFlow = flow;
 	cout << "Starting the Reactive Attack on the Static Routing" << endl;
+	SS << i << " " << flow << "\n";
+	i++;
     while (flow != 0)
     {
         Reactive_Attack(S, D, nodesPtr, nodeAmount, totalLink);
@@ -146,6 +156,7 @@ int main()
 	SS << "\n";
     
     ResetAll(nodesPtr, nodeAmount, totalLink);
+	initialMaxFlow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
 
     //Random Attack//
 
@@ -155,6 +166,8 @@ int main()
     flow = initialMaxFlow;
 	prevFlow = flow;
 	cout << "Randomly Attacking the Static Routing" << endl;
+	SS << i << " " << flow << "\n";
+	i++;
     while (flow != 0)
     {
         Random_Attack(S, D, nodesPtr, nodeAmount, totalLink);
@@ -577,6 +590,8 @@ int MaxFlow(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int to
 			capacity = (linkPtr + i)->getCapacity();		//grabs capacity
 			lowFlow = capacity - (linkPtr + i)->getFlow();	//grabs the flow of the link
 			flow = Residual(target, D, nodesPtr, lowFlow);  //gets the lowest flow for each path
+			(linkPtr + i)->setFlow(flow);					//sets the links returned flow
+			//cout << "Set link to flow of " << (linkPtr + i)->getFlow() << endl;
 			currentRun = currentRun + flow;					//the total of a run
 
 		} //round is over
@@ -651,10 +666,16 @@ int StaticFlow(Node& S, Node& D, Node *nodesPtr, int deadNode, int deadLink, int
 	int search = 0;
 	int next = 0;
 	int deadFlow = 0;
-	int linkAmount = (nodesPtr + deadNode)->getLinksAmount();
+	int linkAmount = 0;
+
+	int totalFlow = 0;
+	int flow = 0;
+
+	linkAmount = S.getLinksAmount();
 	linkPtr = (nodesPtr + deadNode)->getLinks();
 	deadFlow = (linkPtr + deadLink)->getFlow();
-	while (run == 0 && done == false) //search for the dead node an remove the path from the network
+	linkPtr = S.getLinks();
+	while (run < linkAmount && done == false) //search for the dead node an remove the path from the network
 	{
 		next = (linkPtr + run)->getTarget();
 		search = StaticFlowResidual(next, D, nodesPtr, thisNodeisDead, thisLInkisDead, deadFlow, false);
@@ -662,21 +683,20 @@ int StaticFlow(Node& S, Node& D, Node *nodesPtr, int deadNode, int deadLink, int
 		{
 			done = true;
 		}
+		if(search == 0)
+		{ }
 		run++;
 	}
 
 	//add up the flow
-	int totalFlow = 0;
-	int flow = 0;
-	linkPtr = (nodesPtr + S.getVertex())->getLinks();
-	linkAmount = (nodesPtr + S.getVertex())->getLinksAmount();
-	for (int i = 0; i < linkAmount; i++) //totals the flow
+	linkAmount = S.getLinksAmount();
+	linkPtr = S.getLinks();
+	for (int i = 0; i < linkAmount; i++)
 	{
-		flow = (linkPtr + i)->getFlow();
-		totalFlow = totalFlow + flow;
+		totalFlow = totalFlow + (linkPtr + i)->getFlow();
 	}
+	cout << "The initial totalFlow is " << totalFlow << endl;
 	return totalFlow;
-	
 }
 
 //target is current node, D is end, nodesPtr, lowestFlow is the lowest Flow of path, deadNode & link is dead spot, lostFlow is the flow of deadNode and Link, found is for changing the path after a link has died
@@ -691,9 +711,16 @@ int StaticFlowResidual(int target, Node& D, Node * nodesPtr, int deadNode, int d
 	linkPtr = (nodesPtr + deadNode)->getLinks();
 	if (target == (nodesPtr + deadNode)->getVertex()) //if found the dead link, we need to find D and kill everything after it
 	{
+		cout << "Found deadlink" << endl;
 		next = (linkPtr + deadLink)->getTarget();
 		useless = StaticFlowResidual(next, D, nodesPtr, deadNode, deadLink, lostFlow, true);
-		return 0; //if 0 then we found the dead link we need to set the path to 0
+		if (useless == -1) //if D was found
+		{
+			return -1;
+		}
+		else {
+			return 0; //if 0 then we found the dead link we need to set the path to 0
+		}
 	}
 
 	//-----After found----//
@@ -701,25 +728,35 @@ int StaticFlowResidual(int target, Node& D, Node * nodesPtr, int deadNode, int d
 	{
 		if (target == D.getVertex()) //if we found D after the links have been 
 		{
+			cout << "found D" << endl;
 			return -1; //this means we have reached D
 		}
 		linkAmount = (nodesPtr + target)->getLinksAmount(); //total Links, D has not been found
 		linkPtr = (nodesPtr + target)->getLinks();
 		for (int i = 0; i < linkAmount; i++)//check the path for each link from the node in the path
 		{
-			next = (linkPtr + i)->getTarget();
-			if ((linkPtr + i)->getFlow() != 0) //if there is flow in the path
+			if ((linkPtr + i)->getFlow() != 0)//if it is on the path
 			{
-				useless = StaticFlowResidual(next, D, nodesPtr, deadNode, deadLink, lostFlow, true); //find D
-				if (useless == -1) //if we already reached D
+				next = (linkPtr + i)->getTarget();
+				if ((linkPtr + i)->getFlow() != 0) //if there is flow in the path
 				{
-					(linkPtr + i)->setFlow(0);
-					return -1;
+					useless = StaticFlowResidual(next, D, nodesPtr, deadNode, deadLink, lostFlow, true); //find D
+					if (useless == -1) //if we already reached D
+					{
+
+						(linkPtr + i)->setFlow(0);
+						return -1;
+					}
 				}
 			}
 		}
 		return 0; //the path was not found
 
+	}
+	//---------Wrong Path----------------------//
+	if (target == D.getVertex())
+	{
+		return 0; //wrong path
 	}
 
 
@@ -757,6 +794,179 @@ int FlowOfEnd(Node& D, Node *nodesPtr) //I don't think this works nor is it nece
     }
 
     return totalFlow;
+}
+
+void initializeKLinks(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int numberK)
+{
+	int randomNumb;
+	Link Klink;
+	int nodesK[100]; //used to save S's K nodes so that D cannot have a K node that is the same
+
+	Klink.setCapacity(20);
+	Klink.setSource(S.getVertex());
+	Klink.setBreak(false);
+
+	//make klinks for S
+	for (int i = 0; i < numberK; i++)
+	{
+		randomNumb = rand() % nodeAmount;
+		//make sure the link is not connected to D
+		if ((nodesPtr + randomNumb)->getVertex() != D.getVertex())
+		{
+			Klink.setTarget((nodesPtr + randomNumb)->getVertex());
+			S.addLink(Klink);
+			nodesK[i] = (nodesPtr + randomNumb)->getVertex();
+			//cout << "ADDED LINK FROM S WITH TARGET: " << (nodesPtr + randomNumb)->getVertex() << endl;
+		}
+		else
+			i--;
+	}
+
+	Klink.setTarget(D.getVertex());
+
+	//make klinks for D
+	for (int i = 0; i < numberK; i++)
+	{
+		bool allowed = true;
+		randomNumb = rand() % nodeAmount;
+		for (int j = 0; j < numberK; j++)
+		{
+			if ((nodesPtr + randomNumb)->getVertex() == nodesK[j])
+				allowed = false;
+		}
+
+		//make sure the link is not connected to S or its K nodes
+		if ((nodesPtr + randomNumb)->getVertex() != S.getVertex() && allowed)
+		{
+			Klink.setSource((nodesPtr + randomNumb)->getVertex());
+			(nodesPtr + randomNumb)->addLink(Klink);
+			//cout << "ADDED LINK TO D WITH SOURCE: " << (nodesPtr + randomNumb)->getVertex() << endl;
+		}
+		else
+		{
+			i--;
+		}
+
+	}
+
+}
+
+void addKlink(Node& S, Node& D, Node *nodesPtr, const int nodeAmount)
+{
+	int randomNumb;
+	Link Klink;
+	Link *linkPtr;
+	int linkAmount;
+	bool allowed;
+
+	Klink.setCapacity(20);
+	Klink.setSource(S.getVertex());
+	Klink.setBreak(false);
+
+	//add K link to S
+	do
+	{
+		allowed = true;
+		linkPtr = S.getLinks();
+		linkAmount = S.getLinksAmount();
+
+		randomNumb = rand() % nodeAmount;
+		//check to make sure K node isnt a target of S's K links
+		for (int i = 0; i < linkAmount; i++)
+		{
+			//if any target of S's K links, not allowed
+			if ((nodesPtr + randomNumb)->getVertex() == (linkPtr + i)->getTarget())
+			{
+				allowed = false;
+			}
+		}
+
+		linkPtr = (nodesPtr + randomNumb)->getLinks();
+		linkAmount = (nodesPtr + randomNumb)->getLinksAmount();
+
+		for (int i = 0; i < linkAmount; i++)
+		{
+			//if random node already has a link to D, not allowed
+			if (D.getVertex() == (linkPtr + i)->getTarget())
+			{
+				allowed = false;
+			}
+
+		}
+
+		Klink.setTarget((nodesPtr + randomNumb)->getVertex());
+		if (allowed && Klink.getTarget() != S.getVertex() && Klink.getTarget() != D.getVertex())
+		{
+			S.addLink(Klink);
+			cout << "ADDED KLINK TO S: " << Klink.getTarget() << endl;
+		}
+
+	} while (!allowed);
+
+	Klink.setTarget(D.getVertex());
+
+	do
+	{
+		randomNumb = rand() % nodeAmount;
+		allowed = true;
+		linkPtr = S.getLinks();
+		linkAmount = S.getLinksAmount();
+
+		//check to make sure K node isnt a target of S's K links
+		for (int i = 0; i < linkAmount; i++)
+		{
+			//if any target of S's K links, not allowed
+			if ((nodesPtr + randomNumb)->getVertex() == (linkPtr + i)->getTarget())
+			{
+				allowed = false;
+			}
+		}
+
+		Klink.setSource((nodesPtr + randomNumb)->getVertex());
+		if (allowed && Klink.getSource() != S.getVertex() && Klink.getSource() != D.getVertex())
+		{
+			S.addLink(Klink);
+			cout << "ADDED KLINK FROM D: " << Klink.getSource() << endl;
+		}
+
+	} while (!allowed);
+	return;
+}
+
+void ResetKLinks(Node& S, Node& D, const int nodeAmount, Node *nodesPtr)
+{
+	Link *linkPtr;
+	int linkAmount;
+
+	//reset K links
+	linkPtr = S.getLinks();
+	linkAmount = S.getLinksAmount();
+	for (int i = 0; i < linkAmount; i++)
+	{
+		if ((linkPtr + i)->getBreak() == false)
+		{
+			(linkPtr + i)->setTarget(-1);
+			(linkPtr + i)->setBreak(true);
+			S.decrementLinks();
+		}
+	}
+	for (int i = 0; i < nodeAmount; i++)
+	{
+		linkPtr = (nodesPtr + i)->getLinks();
+		linkAmount = (nodesPtr + i)->getLinksAmount();
+		if (linkAmount > 0)
+		{
+			for (int j = 0; j < nodeAmount; j++)
+			{
+				if ((linkPtr + j)->getTarget() == D.getVertex())
+				{
+					(linkPtr + j)->setTarget(-1);
+					(linkPtr + j)->setBreak(true);
+					(nodesPtr + i)->decrementLinks();
+				}
+			}
+		}
+	}
 }
 
 //this will make all the settings for Nodes and Links their default settings. aka, master reset.
