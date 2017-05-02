@@ -18,6 +18,7 @@ class Node
         {
             links[linksAmount] = l;
             linksAmount++;
+            
         }
         void decrementLinks()
         {
