@@ -132,7 +132,6 @@ int main()
 	prevFlow = flow;
 	cout << "Starting the Static Attack on the Static Routing" << endl;
 	SS << i << " " << flow << "\n";
-	i++;
 
 	while (flow != 0)
 	{
@@ -142,11 +141,10 @@ int main()
 		(linkPtr + thisLInkisDead)->setCapacity(0);
 
 		flow = StaticFlow(S, D, nodesPtr, nodeAmount, totalLink);
-		SS << i << " " << flow << "\n";
 		i++;
-		cout << "Attack finshed, new flow is " << flow << endl;
+		SS << i << " " << flow << "\n";
 		prevFlow = flow;
-		cout << "SS Round " << i << "with a flow of " << flow << endl;
+		cout << "ROUND " << i << ": Flow = " << flow << endl;
 		SS << i << " " << flow << "\n";
 	}
 	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
@@ -163,7 +161,6 @@ int main()
 	prevFlow = flow;
 	cout << "Starting the Reactive Attack on the Static Routing" << endl;
 	SS << i << " " << flow << "\n";
-	i++;
 
 	while (flow != 0)
 	{
@@ -174,11 +171,10 @@ int main()
 		(linkPtr + thisLInkisDead)->setCapacity(0);
 
 		flow = StaticFlow(S, D, nodesPtr, nodeAmount, totalLink);
-		SS << i << " " << flow << "\n";
 		i++;
-		cout << "Attack finshed, new flow is " << flow << endl;
+		SS << i << " " << flow << "\n";
 		prevFlow = flow;
-		cout << "SS Round " << i << "with a flow of " << flow << endl;
+		cout << "ROUND " << i << ": Flow = " << flow << endl;
 		SS << i << " " << flow << "\n";
 	}
 	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
@@ -208,9 +204,8 @@ int main()
 		flow = StaticFlow(S, D, nodesPtr, nodeAmount, totalLink);
 		SS << i << " " << flow << "\n";
 		i++;
-		cout << "Attack finshed, new flow is " << flow << endl;
 		prevFlow = flow;
-		cout << "SS Round " << i << "with a flow of " << flow << endl;
+		cout << "ROUND " << i << ": Flow = " << flow << endl;
 		SS << i << " " << flow << "\n";
 	}
 	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
@@ -238,10 +233,11 @@ int main()
 		flow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);			//new flow
 		//cout << "The flow is " << flow << endl;
 		Static_Attack(S, D, nodesPtr, nodeAmount, totalLink);			//attacks a link
-		SR << i << " " << flow << "\n";									//writes to file
+		SR << i << " " << flow << "\n"; //writes to file
+		cout << "ROUND" << i << ": Flow = " << flow << endl;	
 		i++;															//inc time stamp
 	}
-
+	cin >> done;
 
 	SR << "\n";
 
@@ -258,12 +254,14 @@ int main()
 		flow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);		//Gets the new maxflow
 		bfs(S, nodesPtr, nodeAmount);								//sets the distance from S
 		Reactive_Attack(S, D, nodesPtr, nodeAmount, totalLink);		//Attacks a node closest to S
-
+		
+		cout << "ROUND" << i << ": Flow = " << flow << endl;
 		SR << i << " " << flow << "\n";								//writes to a file
 		//ClearFlow(S, D, nodesPtr, nodeAmount);						//clears the flow
 		i++;														//increments the time stamp
 	}
 	SR << "\n";
+	cin >> done;
 
 
 	ResetAll(nodesPtr, nodeAmount, totalLink);
@@ -279,6 +277,7 @@ int main()
 		//cout << "Flow " << flow << endl;
 		Random_Attack(S, D, nodesPtr, nodeAmount, totalLink);		//Kills a link
 
+		cout << "ROUND" << i << ": Flow = " << flow << endl;
 		SR << i << " " << flow << "\n";								//writes to file
 		//ClearFlow(S, D, nodesPtr, nodeAmount);						//resets flow
 		i++;														//new timestamp
@@ -306,7 +305,6 @@ int main()
 	for(int x = 30; x <= 60; x++)
 	{
 		flow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
-		cout << "FLOW AT START K = "<< x << ": "<< flow << endl;
 		i = 0; //set rounds to 0 
 		while (flow != 0)
 		{
@@ -327,12 +325,10 @@ int main()
 		addKlink(S, D, nodesPtr, nodeAmount);
 		
 	}
-	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
 	cin >> done;
 
 	ResetAll(nodesPtr, nodeAmount, totalLink);
 	ResetKLinks(S, D, nodeAmount, nodesPtr);
-	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
 	SSK << "\n";
 
 	initializeKLinks(S, D, nodesPtr, nodeAmount, 30);
@@ -371,12 +367,10 @@ int main()
                 ResetAll(nodesPtr, nodeAmount, totalLink);
 
 	}
-	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
 	cin >> done;
 	
 	ResetAll(nodesPtr, nodeAmount, totalLink);
         ResetKLinks(S, D, nodeAmount, nodesPtr);
-	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
 	SSK << "\n";
 	
 	initializeKLinks(S, D, nodesPtr, nodeAmount, 30);
@@ -413,35 +407,31 @@ int main()
 		ResetAll(nodesPtr, nodeAmount, totalLink);
 	}
 	
-	cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
 	cin >> done;
 	
-	ResetAll(nodesPtr, nodeAmount, totalLink);
-        ResetKLinks(S, D, nodeAmount, nodesPtr);
-        cout << "INITIAL MAX FLOW: " << initialMaxFlow << endl;
         SSK << "\n";
-
-        initializeKLinks(S, D, nodesPtr, nodeAmount, 30);
-        initialMaxFlow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
 	
 	SSK.close();
 	
-	ResetAll(nodesPtr, nodeAmount, totalLink);
 
 	//------------------------------------K Reactive Graphs----------------------------------//
 	cout << "K Reactive Graphs Starting!!!!!!" << endl << endl;
-	ResetKLinks(S, D, nodeAmount, nodesPtr);
-	addKLinks(S, D, nodesPtr, nodeAmount, 30);
 
 	ofstream SKR;
 	SKR.open("k_reactive.dat");
 	SKR << "Static\n";
-
+	
+	ResetAll(nodesPtr, nodeAmount, totalLink);
+        ResetKLinks(S, D, nodeAmount, nodesPtr);
+        initializeKLinks(S, D, nodesPtr, nodeAmount, 30);
+        initialMaxFlow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
+	
 	int round = 0;
 	flow = initialMaxFlow;
 	cout << "Starting the Static Attack on K Reactive Routing" << endl;
 	for(int i = 30; i <= 60; i++)
 	{
+		round = 0;
 		while (flow != 0)
 		{
 			flow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
@@ -449,29 +439,33 @@ int main()
 			ClearFlow(S, D, nodesPtr, nodeAmount);
 			round++;
 		}
+		cout << "ROUNDS TO GET FLOW TO 0 WITH K = " << i << ": " << round << endl;
+		
 		SKR << i << " " << round << "\n";
-		cout << "Round " << i << endl;
 		addKlink(S, D, nodesPtr, nodeAmount);
 		ResetAll(nodesPtr, nodeAmount, totalLink);
 		flow = initialMaxFlow;
 	}
+	cin >> done;
 
 	SKR << "End\n\n";
 
-	ResetAll(nodesPtr, nodeAmount, totalLink);
 
 	//Reactive Attack//
 
 	SKR << "Reactive\n";
 
+	ResetAll(nodesPtr, nodeAmount, totalLink);
 	ResetKLinks(S, D, nodeAmount, nodesPtr);
-	addKLinks(S, D, nodesPtr, nodeAmount, 30);
+	initializeKLinks(S, D, nodesPtr, nodeAmount, 30);
+	initialMaxFlow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
 
 	round = 0;
 	flow = initialMaxFlow;
 	cout << "Started the Reactive Attack on K Reactive Routing" << endl;
 	for(int i = 30; i <= 60; i++)
 	{
+		round = 0;
 		while (flow != 0)
 		{
 			flow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
@@ -480,19 +474,22 @@ int main()
 			ClearFlow(S, D, nodesPtr, nodeAmount);
 			round++;
 		}
+		cout << "ROUNDS TO GET FLOW TO 0 WITH K = " << i << ": " << round << endl;
+		
 		SKR << i << " " << round << "\n";
-		cout << "Round " << i << endl;
+		//cout << "Round " << i << endl;
 		addKlink(S, D, nodesPtr, nodeAmount);
 
 		ResetAll(nodesPtr, nodeAmount, totalLink);
 
 		flow = initialMaxFlow;
 	}
-
+	cin >> done;
 
 	ResetAll(nodesPtr, nodeAmount, totalLink);
-	ResetKLinks(S, D, nodeAmount, nodesPtr);
-	addKLinks(S, D, nodesPtr, nodeAmount, 30);
+        ResetKLinks(S, D, nodeAmount, nodesPtr);
+        initializeKLinks(S, D, nodesPtr, nodeAmount, 30);
+        initialMaxFlow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
 	
 
 	//-------------------------------Random Attack-----------------//
@@ -504,6 +501,7 @@ int main()
 	cout << "Randomly Attacking the Reactive K Routing" << endl;
 	for(int i = 30; i <= 60; i++)
 	{
+		round = 0;
 		while (flow != 0)
 		{
 			flow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);
@@ -512,8 +510,8 @@ int main()
 			ClearFlow(S, D, nodesPtr, nodeAmount);
 			round++;
 		}
+		cout << "ROUNDS TO GET FLOW TO 0 WITH K = " << i << ": " << round << endl;
 		SKR << i << " " << round << "\n";
-		cout << "Round " << i << endl;
 		addKlink(S, D, nodesPtr, nodeAmount);
 
 		ResetAll(nodesPtr, nodeAmount, totalLink);
