@@ -208,7 +208,7 @@ int main()
 
 
 	ResetAll(nodesPtr, nodeAmount, totalLink);
-	//Random Attack//
+	//-------------------------------Random Attack---------------------//
 	SR << "Random\n";
 
 	i = 0;
@@ -217,13 +217,16 @@ int main()
 	while (flow != 0)
 	{
 		flow = MaxFlow(S, D, nodesPtr, nodeAmount, totalLink);		//New flow
+		//cout << "Flow " << flow << endl;
 		Random_Attack(S, D, nodesPtr, nodeAmount, totalLink);		//Kills a link
+
 		SR << i << " " << flow << "\n";								//writes to file
 		//ClearFlow(S, D, nodesPtr, nodeAmount);						//resets flow
 		i++;														//new timestamp
 	}
 
 	SR.close();
+	cin >> done;
 	/*
 	//------------------------------------K Static Graphs------------------------------------//
 	
@@ -345,7 +348,6 @@ int main()
 
 
 	//--------------------------------------Completed------------------------------//
-
     
     delete[] allNodes;
     return 0;
@@ -642,14 +644,14 @@ int Residual(int target, Node&D, Node *nodesPtr, int lgFlow)  //target is the cu
 int StaticFlow(Node& S, Node& D, Node *nodesPtr, int deadNode, int deadLink, int prevFlow)
 { //this function will the check and readd the flow after an attack on Static Routing
 	Link *linkPtr;
-	return 0;
+	
 }
 
 //target is current node, D is end, nodesPtr, lowestFlow is the lowest Flow of path, deadNode & link is dead spot, lostFlow is the flow of deadNode and Link, found is for changing the path after a link has died
 int StaticFlowResidual(int target, Node& D, Node * nodesPtr, int lowestFlow, int deadNode, int deadLink, int lostFlow, bool found)
 { //this is the Recursive function for StaticFlow
 	
-	return 0;
+	
 	
 
 }
@@ -754,15 +756,15 @@ void addKLinks(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int
 		//make sure the link is not connected to S or its K nodes
 		if ((nodesPtr + randomNumb)->getVertex() != S.getVertex() && allowed)
 		{
-			Klink.setSource((nodesPtr + randomNumb)->getVertex());
-			(nodesPtr + randomNumb)->addLink(Klink);
-			//cout << "ADDED LINK TO D WITH SOURCE: " << (nodesPtr + randomNumb)->getVertex() << endl;
+Klink.setSource((nodesPtr + randomNumb)->getVertex());
+(nodesPtr + randomNumb)->addLink(Klink);
+//cout << "ADDED LINK TO D WITH SOURCE: " << (nodesPtr + randomNumb)->getVertex() << endl;
 		}
 		else
 		{
 			i--;
 		}
-	
+
 	}
 
 }
@@ -833,22 +835,27 @@ void Reactive_Attack(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, con
 	int MaxNode = 0;
 	int MaxLink = 0; //keep track of most saturated
 	int MaxFlow = 0;
-	int LeastDis = 0;
+	int LeastDis = 1000;
 	int tempDis = 0;
 
 
 	for (int i = 0; i < nodeAmount; i++)
 	{
 		linkPtr = (nodesPtr + i)->getLinks(); //for each node
-		tempDis = (nodesPtr + i)->getDistance();
+
 		for (int k = 0; k < (nodesPtr + i)->getLinksAmount(); k++) //each link in a node
 		{
-			if ((linkPtr + k)->getFlow() > MaxFlow && tempDis < LeastDis && (linkPtr + k)->getBreak() == true && (linkPtr + k)->getAlive() == true) //if a links flow is greater than current stored max
+			tempDis = (nodesPtr + (linkPtr + k)->getTarget())->getDistance(); //gets the distance to the next node
+			if ((linkPtr + k)->getFlow() > 0/*MaxFlow*/ && (linkPtr + k)->getBreak() == true && (linkPtr + k)->getAlive() == true) //if a links flow is greater than current stored max
 			{//more saturated, least distance, breakable, and is alive
-				MaxFlow = (linkPtr + k)->getFlow(); //saves the max flow and current position of link
-				MaxNode = i;
-				MaxLink = k;
-				LeastDis = tempDis;
+				if (tempDis < LeastDis)//gets the new lowest distance
+				{
+					LeastDis = tempDis;
+					//MaxFlow = (linkPtr + k)->getFlow(); //saves the max flow and current position of link
+					MaxNode = i;
+					MaxLink = k;
+				}
+
 			}
 		}
 	}
@@ -866,13 +873,11 @@ void Reactive_Attack(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, con
 void Random_Attack(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const int totalLink)
 {
 	Link *linkPtr;
-	int randNode;
-	int randLink;
-	int randCho;
+	int randNode = 0;
+	int randLink = 0;
+	int randCho = 0;
 	bool done = false;
 
-	while (done != true)
-	{
 		randNode = rand() % nodeAmount;
 		if ((nodesPtr + randNode)->getLinksAmount() != 0)
 		{
@@ -888,5 +893,5 @@ void Random_Attack(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const
 
 
 		cout << "Attack has finished. Chosen node " << randNode << " and link " << randLink << endl;
-	}
+
 }
