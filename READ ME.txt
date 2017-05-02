@@ -1,3 +1,0 @@
-Need to fix 
-
-The filetograph code is not getting the data read for whatever reason.
