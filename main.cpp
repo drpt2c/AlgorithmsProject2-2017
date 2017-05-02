@@ -41,7 +41,7 @@ void SetNodes(Node *nodesPtr, const int nodeAmount, const int totalLink);
 int StaticFlow(Node& S, Node& D, Node *nodesPtr, int deadNode, int deadLink, int prevFlow);
 
 //This is used for StaticFlow to traverse down the graph
-int StaticFlowResidual(int target, Node& D, Node * nodesPtr, int lowestFlow, int deadNode, int deadLink, int lostFlow, bool found);
+int StaticFlowResidual(int target, Node& D, Node * nodesPtr, int deadNode, int deadLink, int lostFlow, bool found);
 
 void ClearFlow(Node& S, Node& D, Node * nodesPtr, const int nodeAmount);
 
@@ -102,16 +102,18 @@ int main()
     //---------------------------------------Static Routing ----------------------//
     
 	int prevFlow = 0;
-	//Static Attack//
-	//ofstream SS;
-	//SS.open("static.dat");
-	//SS << "Static\n";
+	//Static Attack
+	ofstream SS;
+	SS.open("static.dat");
+	SS << "Static\n";
 
     int i = 0;
     int flow = initialMaxFlow;
-/*	prevFlow = flow;
+	prevFlow = flow;
 	cout << "Starting the Static Attack on the Static Routing" << endl;
 	cout << "Inital Max Flow is " << flow << endl;
+	SS << i << " " << flow << "\n";
+	i++;
     while (flow != 0) {
         Static_Attack(S, D, nodesPtr, nodeAmount, totalLink);
 		flow = StaticFlow(S, D, nodesPtr, thisNodeisDead, thisLInkisDead, prevFlow);
@@ -166,7 +168,7 @@ int main()
 	
 	ResetAll(nodesPtr, nodeAmount, totalLink);
 
-	*/
+
 	//-----------------------------------------Reactive Routing -----------------------//
 	ofstream SR;
 	SR.open("reactive.dat");
@@ -644,15 +646,100 @@ int Residual(int target, Node&D, Node *nodesPtr, int lgFlow)  //target is the cu
 int StaticFlow(Node& S, Node& D, Node *nodesPtr, int deadNode, int deadLink, int prevFlow)
 { //this function will the check and readd the flow after an attack on Static Routing
 	Link *linkPtr;
+	int run = 0;
+	bool done = false;
+	int search = 0;
+	int next = 0;
+	int deadFlow = 0;
+	int linkAmount = (nodesPtr + deadNode)->getLinksAmount();
+	linkPtr = (nodesPtr + deadNode)->getLinks();
+	deadFlow = (linkPtr + deadLink)->getFlow();
+	while (run == 0 && done == false) //search for the dead node an remove the path from the network
+	{
+		next = (linkPtr + run)->getTarget();
+		search = StaticFlowResidual(next, D, nodesPtr, thisNodeisDead, thisLInkisDead, deadFlow, false);
+		if (search == -1) //if we found D
+		{
+			done = true;
+		}
+		run++;
+	}
+
+	//add up the flow
+	int totalFlow = 0;
+	int flow = 0;
+	linkPtr = (nodesPtr + S.getVertex())->getLinks();
+	linkAmount = (nodesPtr + S.getVertex())->getLinksAmount();
+	for (int i = 0; i < linkAmount; i++) //totals the flow
+	{
+		flow = (linkPtr + i)->getFlow();
+		totalFlow = totalFlow + flow;
+	}
+	return totalFlow;
 	
 }
 
 //target is current node, D is end, nodesPtr, lowestFlow is the lowest Flow of path, deadNode & link is dead spot, lostFlow is the flow of deadNode and Link, found is for changing the path after a link has died
-int StaticFlowResidual(int target, Node& D, Node * nodesPtr, int lowestFlow, int deadNode, int deadLink, int lostFlow, bool found)
+int StaticFlowResidual(int target, Node& D, Node * nodesPtr, int deadNode, int deadLink, int lostFlow, bool found)
 { //this is the Recursive function for StaticFlow
+	Link *linkPtr;
+	int useless = 0;
+	int next = 0;
+	int linkAmount = 0;
+	int flow = 0;
+	//----------FOUND DEAD LINK------------//
+	linkPtr = (nodesPtr + deadNode)->getLinks();
+	if (target == (nodesPtr + deadNode)->getVertex()) //if found the dead link, we need to find D and kill everything after it
+	{
+		next = (linkPtr + deadLink)->getTarget();
+		useless = StaticFlowResidual(next, D, nodesPtr, deadNode, deadLink, lostFlow, true);
+		return 0; //if 0 then we found the dead link we need to set the path to 0
+	}
+
+	//-----After found----//
+	if (found == true) //this is called after we have found the deadlink
+	{
+		if (target == D.getVertex()) //if we found D after the links have been 
+		{
+			return -1; //this means we have reached D
+		}
+		linkAmount = (nodesPtr + target)->getLinksAmount(); //total Links, D has not been found
+		linkPtr = (nodesPtr + target)->getLinks();
+		for (int i = 0; i < linkAmount; i++)//check the path for each link from the node in the path
+		{
+			next = (linkPtr + i)->getTarget();
+			if ((linkPtr + i)->getFlow() != 0) //if there is flow in the path
+			{
+				useless = StaticFlowResidual(next, D, nodesPtr, deadNode, deadLink, lostFlow, true); //find D
+				if (useless == -1) //if we already reached D
+				{
+					(linkPtr + i)->setFlow(0);
+					return -1;
+				}
+			}
+		}
+		return 0; //the path was not found
+
+	}
+
+
+	//---------BEFORE FOUND DEADLINK------------//
 	
-	
-	
+	linkAmount = (nodesPtr + target)->getLinksAmount();
+	linkPtr = (nodesPtr + target)->getLinks();
+	for (int i = 0; i < linkAmount; i++)//for each link in the node that has not reached the dead link at this point
+	{
+		if ((linkPtr + i)->getFlow() != 0) //if the link is in the path
+		{
+			useless = StaticFlowResidual(next, D, nodesPtr, deadNode, deadLink, lostFlow, false);
+			if (useless == -1)//we found the deadlink and D
+			{
+				(linkPtr + i)->setFlow(0);
+				return -1;
+			}
+		}
+	}
+	return 0;
 
 }
 
@@ -877,7 +964,9 @@ void Random_Attack(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const
 	int randLink = 0;
 	int randCho = 0;
 	bool done = false;
-
+	
+	while (done == false)
+	{
 		randNode = rand() % nodeAmount;
 		if ((nodesPtr + randNode)->getLinksAmount() != 0)
 		{
@@ -888,8 +977,10 @@ void Random_Attack(Node& S, Node& D, Node *nodesPtr, const int nodeAmount, const
 				thisLInkisDead = randLink;
 				thisNodeisDead = randNode;
 				(linkPtr + randLink)->setAlive(false);//it am dead
+				done = true;
 			}
 		}
+	}
 
 
 		cout << "Attack has finished. Chosen node " << randNode << " and link " << randLink << endl;
